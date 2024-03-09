@@ -3,23 +3,22 @@ package maankoe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
-public class ConsumedEventStream<T> extends EventStream<T> {
+public class ConsumedEventStream<T>
+        extends BaseEventStream<T>
+        implements EventStreamListener<T> {
+
     private final static Logger LOGGER = LoggerFactory.getLogger(ConsumedEventStream.class);
 
-    private final EventStream<T> stream;
     private final Consumer<T> consumer;
-
-    private EventStream<T> listener;
 
     public ConsumedEventStream(
             EventLoop loop,
-            EventStream<T> stream,
             Consumer<T> consumer
     ) {
         super(loop);
-        this.stream = stream;
         this.consumer = consumer;
     }
 
@@ -29,6 +28,6 @@ public class ConsumedEventStream<T> extends EventStream<T> {
             consumer.accept(item);
             return item;
         });
-//        event.onComplete(x -> listener.addInput(event.result()));
+        event.onComplete(x -> listener.addInput(x));
     }
 }
