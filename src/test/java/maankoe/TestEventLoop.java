@@ -5,15 +5,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import static maankoe.Utilities.waitForCompletion;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestEventLoop {
     class SideEffectConsumer<T> implements Consumer<T> {
-        List<T> items = new ArrayList<>();
+        Collection<T> items = new ConcurrentLinkedQueue<>();
         public void accept(T item) {
 //            LOGGER.info("accept {}", item);
             this.items.add(item);
@@ -60,17 +63,10 @@ public class TestEventLoop {
                 .onComplete(x ->
                         loop.submit(() -> x * multiplier)
                                 .onComplete(consumer)
+                                .onError(errorConsumer)
                 );
         Thread.sleep(100);
         assertThat(errorConsumer.items).isEmpty();
         assertThat(consumer.items).containsExactly(value * multiplier);
-    }
-
-    private final static Logger LOGGER = LoggerFactory.getLogger(TestEventLoop.class);
-
-    private void waitForCompletion(EventLoop loop) {
-        while (loop.hasEvents()) {
-//            LOGGER.info("{}", loop.events);
-        }
     }
 }

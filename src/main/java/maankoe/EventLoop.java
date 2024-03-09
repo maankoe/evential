@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
 public class EventLoop {
     private final static Logger LOGGER = LoggerFactory.getLogger(EventLoop.class);
 
-    final Collection<Event<?>> events;
+    private final Collection<Event<?>> events;
     private final ExecutorService executor;
 
     private boolean running = false;
@@ -28,6 +28,7 @@ public class EventLoop {
         while (this.running()) {
             for (Event<?> event : this.events) {
                 if (event.isDone()) {
+                    LOGGER.info("EMIT {}", event);
                     this.emit(event);
                 }
             }
@@ -35,6 +36,7 @@ public class EventLoop {
     }
 
     public <T> Event<T> submit(Callable<T> task) {
+        LOGGER.info("SUBMIT {}", task);
         Event<T> event = new Event<>(this.executor.submit(task));
         this.events.add(event);
         return event;

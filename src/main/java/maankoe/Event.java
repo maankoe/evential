@@ -1,26 +1,37 @@
 package maankoe;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public class Event<T> {
+    private final static Logger LOGGER = LoggerFactory.getLogger(Event.class);
+
     private final Future<T> future;
+    private final AtomicBoolean isDone;
     private final Collection<OnceConsumer<T>> onComplete;
     private final Collection<OnceConsumer<Exception>> onError;
 
     public Event(Future<T> future) {
         this.future = future;
+        this.isDone = new AtomicBoolean(false);
         this.onComplete = new ConcurrentLinkedQueue<>();
         this.onError = new ConcurrentLinkedQueue<>();
     }
 
     public Event<T> onComplete(Consumer<T> consumer) {
+        LOGGER.info("ON_COMPLETE {}", consumer);
         OnceConsumer<T> onceConsumer = new OnceConsumer<>(consumer);
         this.onComplete.add(onceConsumer);
         if (this.isDone()) {
             try {
+                LOGGER.info("ALREADY_COMPLETED {}", this.future.get());
                 onceConsumer.accept(this.future.get());
             } catch (CancellationException | ExecutionException | InterruptedException e) {
                 // pass
@@ -43,11 +54,12 @@ public class Event<T> {
     }
 
     public boolean isDone() {
-        return this.future.isDone();
+        this.isDone.compareAndSet(false, future.isDone());
+        return this.isDone.get();
     }
 
     public void complete() {
-        if (!future.isDone()) {
+        if (!this.isDone()) {
             this.error(new IllegalStateException("Future emitted but not done."));
         } else {
             try {
@@ -59,7 +71,8 @@ public class Event<T> {
     }
 
     private void complete(T result) {
-        for (Consumer<T> consumer : new ArrayList<>(this.onComplete)) {
+        LOGGER.info("COMPLETE {}", result);
+        for (Consumer<T> consumer : this.onComplete) {
             consumer.accept(result);
         }
     }
