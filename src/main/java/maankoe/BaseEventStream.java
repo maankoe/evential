@@ -5,7 +5,17 @@ import org.slf4j.LoggerFactory;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
+
+/**
+ * sorted, distinct
+ * take, skip, takeWhile, skipWhile
+ * reduce, aggregate,
+ * anyMatch, allMatch, nonMatch
+ * concat?
+ * @param <O>
+ */
 public abstract class BaseEventStream<O> {
     private final static Logger LOGGER = LoggerFactory.getLogger(EventStream.class);
 
@@ -26,6 +36,12 @@ public abstract class BaseEventStream<O> {
 
     public <OO> BaseEventStream<OO> flatMap(Function<O, Iterable<OO>> mapper) {
         FlatMappedEventStream<O, OO> ret = new FlatMappedEventStream<>(this.loop, mapper);
+        this.listener = ret;
+        return ret;
+    }
+
+    public BaseEventStream<O> filter(Predicate<O> predicate) {
+        FilteredEventStream<O> ret = new FilteredEventStream(this.loop, predicate);
         this.listener = ret;
         return ret;
     }
