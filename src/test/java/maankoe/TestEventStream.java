@@ -1,21 +1,25 @@
 package maankoe;
 
+import org.assertj.core.util.Streams;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static maankoe.Utilities.waitForCompletion;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestEventStream {
     @Test
-    public void testConsume() throws InterruptedException {
+    public void testConsume() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
@@ -31,7 +35,7 @@ public class TestEventStream {
     }
 
     @Test
-    public void testMap() throws InterruptedException {
+    public void testMap() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
@@ -44,6 +48,27 @@ public class TestEventStream {
         for (int i=0;i<1000;i++) {
             expected.add(mapper.apply(i));
             stream.addInput(i);
+        }
+        waitForCompletion(loop);
+        assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
+    }
+
+    @Test
+    public void testFlatMap() {
+        EventLoop loop = new EventLoop();
+        Executors.newSingleThreadExecutor().submit(loop::run);
+        Collection<String> results = new ConcurrentLinkedQueue<>();
+        EventStream<String> stream = new EventStream<>(loop);
+        Function<String, Iterable<String>> mapper =
+                x -> Arrays.stream(x.split(" ")).toList();
+        stream
+                .flatMap(mapper)
+                .consume(results::add);
+        List<String> expected = new ArrayList<>();
+        for (int i=0;i<1000;i++) {
+            String input = String.format("%d %d %d", i, i, i);
+            expected.addAll(Streams.stream(mapper.apply(input)).toList());
+            stream.addInput(input);
         }
         waitForCompletion(loop);
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);

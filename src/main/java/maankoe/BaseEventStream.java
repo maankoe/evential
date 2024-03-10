@@ -24,6 +24,12 @@ public abstract class BaseEventStream<O> {
         return ret;
     }
 
+    public <OO> BaseEventStream<OO> flatMap(Function<O, Iterable<OO>> mapper) {
+        FlatMappedEventStream<O, OO> ret = new FlatMappedEventStream<>(this.loop, mapper);
+        this.listener = ret;
+        return ret;
+    }
+
     public BaseEventStream<O> consume(Consumer<O> consumer) {
         ConsumedEventStream<O> ret = new ConsumedEventStream<>(this.loop, consumer);
         this.listener = ret;
