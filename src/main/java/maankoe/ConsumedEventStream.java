@@ -3,9 +3,6 @@ package maankoe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public class ConsumedEventStream<T>
@@ -15,10 +12,8 @@ public class ConsumedEventStream<T>
     private final static Logger LOGGER = LoggerFactory.getLogger(ConsumedEventStream.class);
 
     private final Consumer<T> consumer;
-    private final Collection<Long> expecting;
     private final IndexGenerator indexGenerator;
-    private final AtomicBoolean isBlocked = new AtomicBoolean(false);
-    private CompletableFuture<Boolean> isComplete = null;
+    private final BlockingStrategy blockingStrategy;
 
     public ConsumedEventStream(
             EventLoop loop,
@@ -26,15 +21,12 @@ public class ConsumedEventStream<T>
     ) {
         super(loop);
         this.consumer = consumer;
-        this.expecting = ConcurrentHashMap.newKeySet();
+        this.blockingStrategy = new BlockingStrategy.Expecting();
         this.indexGenerator = new IndexGenerator();
     }
 
     public void expect(long index) {
-        if (isBlocked.get()) {
-            throw new RuntimeException("CANNOT");
-        }
-        this.expecting.add(index);
+        this.blockingStrategy.expect(index);
     }
 
     public void addInput(T item) {
@@ -42,16 +34,14 @@ public class ConsumedEventStream<T>
     }
 
     public void addInput(T item, long index) {
-        LOGGER.info("CONSUME {} {}", item, expecting);
-        this.expecting.remove(index);
-        if (this.isBlocked.get() && this.expecting.isEmpty()) {
-            this.isComplete.complete(true);
-        }
+        LOGGER.info("CONSUME {}", item);
+        this.blockingStrategy.accept(index);
         Event<T> event = loop.submit(() -> {
             consumer.accept(item);
             return item;
         });
-//        long eventIndex = this.indexGenerator.next();
+        long eventIndex = this.indexGenerator.next();
+//        this.listener.expect(eventIndex);
         event.onComplete(x -> {
             try {
                 Thread.sleep(100);
@@ -62,17 +52,7 @@ public class ConsumedEventStream<T>
         });
     }
 
-    public void block() throws ExecutionException, InterruptedException {
-        LOGGER.debug("BLOCK");
-        this.isBlocked.compareAndSet(false, true);
-        this.isComplete = new CompletableFuture<>();
-        while (!this.expecting.isEmpty()) {
-            LOGGER.debug("AWAITING {} inputs", this.expecting);
-            try {
-                this.isComplete.get(1000, TimeUnit.MILLISECONDS);
-            } catch (TimeoutException e) {
-                //do nothing
-            }
-        }
+    public void block() {
+        this.blockingStrategy.block();
     }
 }
