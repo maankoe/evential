@@ -8,30 +8,30 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static maankoe.Utilities.waitForCompletion;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestEventStream {
+    private void consume(int i) {}
     @Test
-    public void testConsume() {
+    public void testConsume() throws ExecutionException, InterruptedException {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
-        stream.consume(results::add);
+        ConsumedEventStream<Integer> consumedStream = stream.consume(results::add);
         List<Integer> expected = new ArrayList<>();
-        for (int i=0;i<1000;i++) {
+        for (int i=0;i<100;i++) {
             expected.add(i);
+            consumedStream.expect(i);
             stream.addInput(i);
         }
-        waitForCompletion(loop);
+        consumedStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
 
