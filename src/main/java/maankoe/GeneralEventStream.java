@@ -24,16 +24,16 @@ public class GeneralEventStream<I, O>
         this.blockingStrategy.expect(index);
     }
 
-    public void close(long index) {
-        this.blockingStrategy.close(index);
-    }
-
-    public void addInput(I item) {
-        this.addInput(item, (int) item);
-    }
-
-    public void addInput(I item, long index) {
+    public void submit(I item, long index) {
         this.submitStrategy.submit(item, index, this.listener);
+    }
+
+    public void accept(long index) {
+        this.blockingStrategy.accept(index);
+    }
+
+    public void close(long index) {
+        this.submitStrategy.close(index, this.listener);
     }
 
     public void block() {

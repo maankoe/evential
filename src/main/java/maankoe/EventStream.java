@@ -12,9 +12,14 @@ public class EventStream<O>
         super(loop);
     }
 
-    public void addInput(O item) {
+    public void submit(O item) {
         LOGGER.info("SUBMIT {}", item);
-        Event<O> event = loop.submit(() -> item);
-        event.onComplete(x -> listener.addInput(x));
+        Event<O> event = this.loop.submit(() -> item);
+        // this guy needs proper submit strategy or something (needs to tell lsitener to expect)
+        event.onComplete(x -> this.listener.submit(x));
+    }
+
+    public void block() {
+        this.listener.block();
     }
 }

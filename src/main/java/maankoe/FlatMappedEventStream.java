@@ -21,11 +21,11 @@ public class FlatMappedEventStream<I, O>
         this.mapper = mapper;
     }
 
-    public void addInput(I item) {
+    public void submit(I item) {
         LOGGER.info("FLATMAP {}", item);
         for (O output : mapper.apply(item)) {
             Event<O> event = loop.submit(() -> output);
-            event.onComplete(x -> listener.addInput(x));
+            event.onComplete(x -> listener.submit(x));
         }
     }
 }

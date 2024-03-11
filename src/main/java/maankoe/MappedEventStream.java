@@ -22,9 +22,9 @@ public class MappedEventStream<I, O>
         this.mapper = mapper;
     }
 
-    public void addInput(I item) {
+    public void submit(I item) {
         LOGGER.info("MAP {}", item);
         Event<O> event = loop.submit(() -> mapper.apply(item));
-        event.onComplete(x -> listener.addInput(x));
+        event.onComplete(x -> listener.submit(x));
     }
 }

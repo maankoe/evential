@@ -24,12 +24,12 @@ public class TestEventStream {
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
-        GeneralEventStream<Integer, Integer> consumedStream = stream.consume(results::add);
+        ConsumedEventStream<Integer> consumedStream = stream.consume(results::add);
         List<Integer> expected = new ArrayList<>();
         for (int i=0;i<1000;i++) {
             expected.add(i);
             consumedStream.expect(i);
-            stream.addInput(i);
+            stream.submit(i);
         }
         consumedStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
@@ -48,7 +48,7 @@ public class TestEventStream {
         List<Integer> expected = new ArrayList<>();
         for (int i=0;i<1000;i++) {
             expected.add(i);
-            stream.addInput(i);
+            stream.submit(i);
         }
         waitForCompletion(loop);
         assertThat(resultsA).containsExactlyInAnyOrderElementsOf(expected);
@@ -68,7 +68,7 @@ public class TestEventStream {
         List<Integer> expected = new ArrayList<>();
         for (int i=0;i<1000;i++) {
             expected.add(mapper.apply(i));
-            stream.addInput(i);
+            stream.submit(i);
         }
         waitForCompletion(loop);
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
@@ -89,7 +89,7 @@ public class TestEventStream {
         for (int i=0;i<1000;i++) {
             String input = String.format("%d %d %d", i, i, i);
             expected.addAll(Streams.stream(mapper.apply(input)).toList());
-            stream.addInput(input);
+            stream.submit(input);
         }
         waitForCompletion(loop);
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
@@ -102,15 +102,15 @@ public class TestEventStream {
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
         Predicate<Integer> predicate = x -> x%2==0;
-        stream
+        ConsumedEventStream<Integer> filteredStream = stream
                 .filter(predicate)
                 .consume(results::add);
         List<Integer> expected = new ArrayList<>();
         for (int i=0;i<1000;i++) {
             if (predicate.test(i)) expected.add(i);
-            stream.addInput(i);
+            stream.submit(i);
         }
-        waitForCompletion(loop);
+        filteredStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
 }

@@ -1,28 +1,39 @@
 package maankoe;
 
-import java.util.concurrent.ExecutionException;
 
 public interface EventStreamListener<T> {
-//    void expect(long index);
-//    void close();
-    void addInput(T input);
-
-    default void expect(long next) {};
-//    void block() throws ExecutionException, InterruptedException;
+    default void expect(long index) {}
+    default void submit(T item) {this.submit(item, (int) item);}
+    default void submit(T item, long index) {}
+    default void accept(long index) {}
+    default void close(long index) {}
+    default void block() {}
 
     class Dummy<T> implements EventStreamListener<T> {
-//        @Override
-//        public void expect(long index) {}
-
         @Override
-        public void addInput(T input) {
+        public void expect(long index) {
             // do nothing
         }
 
-//        @Override
-//        public void block() {
-//             do nothing
-//        }
+        @Override
+        public void submit(T item, long index) {
+            // do nothing
+        }
+
+        @Override
+        public void accept(long index) {
+            // do nothing
+        }
+
+        @Override
+        public void close(long index) {
+            //do nothing
+        }
+
+        @Override
+        public void block() {
+            // do nothing
+        }
     }
 
 }
