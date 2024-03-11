@@ -24,9 +24,9 @@ public class TestEventStream {
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
-        ConsumedEventStream<Integer> consumedStream = stream.consume(results::add);
+        GeneralEventStream<Integer, Integer> consumedStream = stream.consume(results::add);
         List<Integer> expected = new ArrayList<>();
-        for (int i=0;i<100;i++) {
+        for (int i=0;i<1000;i++) {
             expected.add(i);
             consumedStream.expect(i);
             stream.addInput(i);

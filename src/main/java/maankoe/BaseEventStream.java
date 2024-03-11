@@ -42,14 +42,19 @@ public abstract class BaseEventStream<O> {
     }
 
     public BaseEventStream<O> filter(Predicate<O> predicate) {
-        FilteredEventStream<O> ret = new FilteredEventStream(this.loop, predicate);
+        FilteredEventStream<O> ret = new FilteredEventStream<>(this.loop, predicate);
         this.listener = ret;
         return ret;
     }
 
-    public ConsumedEventStream<O> consume(Consumer<O> consumer) {
+    public GeneralEventStream<O, O> consume(Consumer<O> consumer) {
         ConsumedEventStream<O> ret = new ConsumedEventStream<>(this.loop, consumer);
         this.listener = ret;
         return ret;
+//        GeneralEventStream<O, O> ret = new GeneralEventStream<>(
+//                loop, new EventFunction.Consumer<>(consumer), "CONSUME"
+//        );
+//        this.listener = ret;
+//        return ret;
     }
 }

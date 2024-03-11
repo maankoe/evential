@@ -10,22 +10,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public interface BlockingStrategy {
 
     void expect(long index);
-    void block();
+    void close(long index);
     void accept(long index);
+    void block();
 
     class None implements BlockingStrategy {
         @Override
         public void expect(long index) {
-
+            //do nothing
         }
 
         @Override
-        public void block() {
+        public void close(long index) {
             // do nothing
         }
 
         @Override
         public void accept(long index) {
+            // do nothing
+        }
+
+        @Override
+        public void block() {
             // do nothing
         }
     }
@@ -37,6 +43,7 @@ public interface BlockingStrategy {
         private CompletableFuture<Boolean> isComplete = null;
 
         private final Collection<Long> expecting;
+        private long closeIndex = Long.MAX_VALUE;
 
         public Expecting() {
             this(ConcurrentHashMap.newKeySet());
@@ -48,10 +55,19 @@ public interface BlockingStrategy {
 
         @Override
         public void expect(long index) {
-            if (this.isBlocked.get()) {
-                throw new RuntimeException("Cannot expect new events on blocked stream@");
+            if (index > this.closeIndex) {
+                throw new IllegalStateException(String.format(
+                        "Stream is closed and cannot expect more input, closed at %d, received %d",
+                        this.closeIndex,
+                        index
+                ));
             }
             this.expecting.add(index);
+        }
+
+        @Override
+        public void close(long index) {
+            this.closeIndex = index;
         }
 
         @Override

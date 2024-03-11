@@ -4,7 +4,10 @@ import java.util.concurrent.ExecutionException;
 
 public interface EventStreamListener<T> {
 //    void expect(long index);
+//    void close();
     void addInput(T input);
+
+    default void expect(long next) {};
 //    void block() throws ExecutionException, InterruptedException;
 
     class Dummy<T> implements EventStreamListener<T> {
