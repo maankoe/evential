@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -118,5 +119,38 @@ public class TestEventStream {
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
 
-    
+    @Test
+    public void testLongChain() {
+        EventLoop loop = new EventLoop();
+        Executors.newSingleThreadExecutor().submit(loop::run);
+        Collection<Integer> results = new ConcurrentLinkedQueue<>();
+        EventStream<String> stream = new EventStream<>(loop);
+        Function<String, Iterable<String>> splitMapper = x -> Arrays.stream(x.split(" ")).toList();
+        Consumer<String> sleep = x -> {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        };
+        Function<String, Integer> parseIntMapper = Integer::parseInt;
+        Function<Integer, Integer> multiplyMapper = x -> x * 5;
+        ConsumedEventStream<Integer> outStream = stream
+                .consume(sleep)
+                .flatMap(splitMapper)
+                .map(parseIntMapper)
+                .map(multiplyMapper)
+                .consume(results::add);
+        List<Integer> expected = new ArrayList<>();
+        for (int i=0;i<1000;i++) {
+            String input = String.format("%d %d %d %d %d", i, i, i, i, i);
+            expected.addAll(Streams.stream(splitMapper.apply(input)).map(parseIntMapper).map(multiplyMapper).toList());
+            stream.expect(i);
+            stream.submit(input);
+            stream.accept(i);
+        }
+        stream.close(1000);
+        outStream.block();
+        assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
+    }
 }

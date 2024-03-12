@@ -1,9 +1,14 @@
 package maankoe;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class GeneralEventStream<I, O>
         extends BaseEventStream<O>
         implements EventStreamListener<I> {
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(GeneralEventStream.class);
 
     private final SubmitStrategy<I, O> submitStrategy;
 
@@ -41,6 +46,7 @@ public class GeneralEventStream<I, O>
     }
 
     public void close(long index) {
+        LOGGER.info("Closing stream at index {}", index);
         this.submitStrategy.close(index, this.listener);
     }
 

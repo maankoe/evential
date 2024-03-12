@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.lang.Math.max;
+
 public interface BlockingStrategy {
 
     void expect(long index);
@@ -44,6 +46,7 @@ public interface BlockingStrategy {
 
         private final Collection<Long> expecting;
         private long closeIndex = Long.MAX_VALUE;
+        private long maxExpecting = Long.MIN_VALUE;
 
         public Expecting() {
             this(ConcurrentHashMap.newKeySet());
@@ -55,13 +58,15 @@ public interface BlockingStrategy {
 
         @Override
         public void expect(long index) {
-            if (index >= this.closeIndex) {
+            if (index > this.closeIndex) {
+                LOGGER.error("Expecting {} on stream closed at {}", index, this.closeIndex);
                 throw new IllegalStateException(String.format(
                         "Stream is closed and cannot expect more input, closed at %d, received %d",
                         this.closeIndex,
                         index
                 ));
             }
+            this.maxExpecting = max(this.maxExpecting, index);
             this.expecting.add(index);
         }
 
@@ -72,11 +77,14 @@ public interface BlockingStrategy {
 
         @Override
         public void block() {
-            LOGGER.info("BLOCK");
+            LOGGER.info("BLOCK closeIndex={}, maxExpecting={}", closeIndex, maxExpecting);
             this.isBlocked.compareAndSet(false, true);
             this.isComplete = new CompletableFuture<>();
-            while (!this.expecting.isEmpty()) {
-                LOGGER.info("AWAITING {} inputs", this.expecting);
+            while (!this.expecting.isEmpty() || this.maxExpecting != this.closeIndex) {
+                LOGGER.info(
+                        "AWAITING {} inputs, {}/{}",
+                        this.expecting.size(), this.maxExpecting, this.closeIndex
+                );
                 try {
                     this.isComplete.get(1000, TimeUnit.MILLISECONDS);
                 } catch (TimeoutException | InterruptedException | ExecutionException e) {

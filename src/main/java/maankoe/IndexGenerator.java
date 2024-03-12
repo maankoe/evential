@@ -13,4 +13,7 @@ public class IndexGenerator {
     public long next() {
         return current.getAndIncrement();
     }
+    public long current() {
+        return current.get();
+    }
 }
