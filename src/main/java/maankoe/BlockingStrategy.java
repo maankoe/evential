@@ -58,8 +58,9 @@ public interface BlockingStrategy {
 
         @Override
         public void expect(long index) {
-            if (index > this.closeIndex) {
+            if (index >= this.closeIndex) {
                 LOGGER.error("Expecting {} on stream closed at {}", index, this.closeIndex);
+                System.exit(1);
                 throw new IllegalStateException(String.format(
                         "Stream is closed and cannot expect more input, closed at %d, received %d",
                         this.closeIndex,

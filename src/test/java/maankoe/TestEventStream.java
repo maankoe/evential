@@ -149,7 +149,7 @@ public class TestEventStream {
             stream.submit(input);
             stream.accept(i);
         }
-        stream.close(1000);
+        stream.close(999);
         outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }

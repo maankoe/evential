@@ -7,11 +7,11 @@ public class IndexGenerator {
     private final AtomicLong current;
 
     public IndexGenerator() {
-        this.current = new AtomicLong(0);
+        this.current = new AtomicLong(-1);
     }
 
     public long next() {
-        return current.getAndIncrement();
+        return current.incrementAndGet();
     }
     public long current() {
         return current.get();

@@ -59,9 +59,9 @@ public interface SubmitStrategy<I, O> {
         }
 
         public void close(long index, EventStreamListener<O> listener) {
-            this.blockingStrategy.close(index-1);
+            this.blockingStrategy.close(index);
             this.block();
-            listener.close(this.indexGenerator.next());
+            listener.close(this.indexGenerator.current());
         }
 
         @Override
@@ -117,9 +117,9 @@ public interface SubmitStrategy<I, O> {
         }
 
         public void close(long index, EventStreamListener<O> listener) {
-            this.blockingStrategy.close(index-1);
+            this.blockingStrategy.close(index);
             this.block();
-            listener.close(this.indexGenerator.next());
+            listener.close(this.indexGenerator.current());
         }
 
         @Override
