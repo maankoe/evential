@@ -55,7 +55,7 @@ public interface BlockingStrategy {
 
         @Override
         public void expect(long index) {
-            if (index > this.closeIndex) {
+            if (index >= this.closeIndex) {
                 throw new IllegalStateException(String.format(
                         "Stream is closed and cannot expect more input, closed at %d, received %d",
                         this.closeIndex,
@@ -72,11 +72,11 @@ public interface BlockingStrategy {
 
         @Override
         public void block() {
-            LOGGER.debug("BLOCK");
+            LOGGER.info("BLOCK");
             this.isBlocked.compareAndSet(false, true);
             this.isComplete = new CompletableFuture<>();
             while (!this.expecting.isEmpty()) {
-                LOGGER.debug("AWAITING {} inputs", this.expecting);
+                LOGGER.info("AWAITING {} inputs", this.expecting);
                 try {
                     this.isComplete.get(1000, TimeUnit.MILLISECONDS);
                 } catch (TimeoutException | InterruptedException | ExecutionException e) {

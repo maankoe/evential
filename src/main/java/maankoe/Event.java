@@ -26,12 +26,12 @@ public class Event<T> {
     }
 
     public Event<T> onComplete(Consumer<T> consumer) {
-        LOGGER.info("ON_COMPLETE {}", consumer);
+        LOGGER.debug("ON_COMPLETE {}", consumer);
         OnceConsumer<T> onceConsumer = new OnceConsumer<>(consumer);
         this.onComplete.add(onceConsumer);
         if (this.isDone()) {
             try {
-                LOGGER.info("ALREADY_COMPLETED {}", this.future.get());
+                LOGGER.debug("ALREADY_COMPLETED {}", this.future.get());
                 onceConsumer.accept(this.future.get());
             } catch (CancellationException | ExecutionException | InterruptedException e) {
                 // pass
@@ -71,7 +71,7 @@ public class Event<T> {
     }
 
     private void complete(T result) {
-        LOGGER.info("COMPLETE {}", result);
+        LOGGER.debug("COMPLETE {}", result);
         for (Consumer<T> consumer : this.onComplete) {
             consumer.accept(result);
         }

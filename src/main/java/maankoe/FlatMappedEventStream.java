@@ -16,26 +16,3 @@ public class FlatMappedEventStream<I, O> extends GeneralEventStream<I, O> {
         );
     }
 }
-//        extends BaseEventStream<O>
-//        implements EventStreamListener<I> {
-//
-//    private final static Logger LOGGER = LoggerFactory.getLogger(ConsumedEventStream.class);
-//
-//    private final Function<I, Iterable<O>> mapper;
-//
-//    public FlatMappedEventStream(
-//            EventLoop loop,
-//            Function<I, Iterable<O>> mapper
-//    ) {
-//        super(loop);
-//        this.mapper = mapper;
-//    }
-//
-//    public void submit(I item) {
-//        LOGGER.info("FLATMAP {}", item);
-//        for (O output : mapper.apply(item)) {
-//            Event<O> event = loop.submit(() -> output);
-//            event.onComplete(x -> listener.submit(x));
-//        }
-//    }
-//}

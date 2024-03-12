@@ -9,7 +9,7 @@ public interface SubmitStrategy<I, O> {
     Logger LOGGER = LoggerFactory.getLogger(SubmitStrategy.class);
 
     void expect(long index);
-    void submit(I item, long index, EventStreamListener<O> listener);
+    void submit(I item, EventStreamListener<O> listener);
     void accept(long index);
     void close(long index, EventStreamListener<O> listener);
     void block();
@@ -41,21 +41,16 @@ public interface SubmitStrategy<I, O> {
 
         public void submit(
                 I item,
-                long index,
                 EventStreamListener<O> listener
         ) {
-            LOGGER.info("{} {}", this.name, item);
-            Event<Optional<O>> event = loop.submit(() -> {
-                Optional<O> ret = this.function.apply(item);
-                this.blockingStrategy.accept(index);
-                return ret;
-            });
+            LOGGER.debug("{} {}", this.name, item);
+            Event<Optional<O>> event = loop.submit(() -> this.function.apply(item));
             long submitIndex = this.indexGenerator.next();
             listener.expect(submitIndex);
-            event.onComplete(ox -> ox.ifPresentOrElse(
-                    x -> listener.submit(x, submitIndex),
-                    () -> listener.accept(submitIndex)
-            ));
+            event.onComplete(ox -> {
+                ox.ifPresent(listener::submit);
+                listener.accept(submitIndex);
+            });
         }
 
         @Override
@@ -101,22 +96,18 @@ public interface SubmitStrategy<I, O> {
 
         public void submit(
                 I item,
-                long index,
                 EventStreamListener<O> listener
         ) {
-            LOGGER.info("{} {}", this.name, item);
-            Event<Optional<Iterable<O>>> event = loop.submit(() -> {
-//                Thread.sleep(100);
-                Optional<Iterable<O>> ret = this.function.apply(item);
-                this.blockingStrategy.accept(index);
-                return ret;
-            });
+            LOGGER.debug("{} {}", this.name, item);
+            Event<Optional<Iterable<O>>> event = loop.submit(() -> this.function.apply(item));
             long submitIndex = this.indexGenerator.next();
             listener.expect(submitIndex);
-            event.onComplete(ox -> ox.ifPresentOrElse(
-                    xi -> xi.forEach(x -> listener.submit(x, submitIndex)),
-                    () -> listener.accept(submitIndex)
-            ));
+            event.onComplete(ox -> {
+                ox.ifPresent(
+                        xi -> xi.forEach(listener::submit)
+                );
+                listener.accept(submitIndex);
+            });
         }
 
         @Override

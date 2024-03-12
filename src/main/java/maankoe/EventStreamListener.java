@@ -3,7 +3,7 @@ package maankoe;
 
 public interface EventStreamListener<T> {
     void expect(long index);
-    void submit(T item, long index);
+    void submit(T item);
     void accept(long index);
     void close(long index);
     void block();
@@ -15,7 +15,7 @@ public interface EventStreamListener<T> {
         }
 
         @Override
-        public void submit(T item, long index) {
+        public void submit(T item) {
             // do nothing
         }
 

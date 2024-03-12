@@ -28,7 +28,7 @@ public class EventLoop {
         while (this.running()) {
             for (Event<?> event : this.events) {
                 if (event.isDone()) {
-                    LOGGER.info("EMIT {}", event);
+                    LOGGER.debug("EMIT {}", event);
                     this.emit(event);
                 }
             }
@@ -36,7 +36,7 @@ public class EventLoop {
     }
 
     public <T> Event<T> submit(Callable<T> task) {
-        LOGGER.info("SUBMIT {}", task);
+        LOGGER.debug("SUBMIT {}", task);
         Event<T> event = new Event<>(this.executor.submit(task));
         this.events.add(event);
         return event;

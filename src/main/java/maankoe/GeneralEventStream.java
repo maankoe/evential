@@ -32,8 +32,8 @@ public class GeneralEventStream<I, O>
         this.submitStrategy.expect(index);
     }
 
-    public void submit(I item, long index) {
-        this.submitStrategy.submit(item, index, this.listener);
+    public void submit(I item) {
+        this.submitStrategy.submit(item, this.listener);
     }
 
     public void accept(long index) {
