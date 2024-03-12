@@ -14,24 +14,26 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static maankoe.Utilities.waitForCompletion;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestEventStream {
     private void consume(int i) {}
     @Test
-    public void testConsume() throws ExecutionException, InterruptedException {
+    public void testConsume() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
         ConsumedEventStream<Integer> outStream = stream.consume(results::add);
         List<Integer> expected = new ArrayList<>();
-        for (int i=0;i<1000;i++) {
+        int n = 1000;
+        for (int i=0;i<=n;i++) {
             expected.add(i);
             stream.expect(i);
             stream.submit(i);
+            stream.accept(i);
         }
+        stream.close(n);
         outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
@@ -47,11 +49,14 @@ public class TestEventStream {
                 .consume(resultsA::add)
                 .consume(resultsB::add);
         List<Integer> expected = new ArrayList<>();
-        for (int i=0;i<1000;i++) {
+        int n = 1000;
+        for (int i=0;i<=n;i++) {
             expected.add(i);
             stream.expect(i);
             stream.submit(i);
+            stream.accept(i);
         }
+        stream.close(n);
         outStream.block();
         assertThat(resultsA).containsExactlyInAnyOrderElementsOf(expected);
         assertThat(resultsB).containsExactlyInAnyOrderElementsOf(expected);
@@ -68,11 +73,14 @@ public class TestEventStream {
                 .map(mapper)
                 .consume(results::add);
         List<Integer> expected = new ArrayList<>();
-        for (int i=0;i<1000;i++) {
+        int n = 1000;
+        for (int i=0;i<=n;i++) {
             expected.add(mapper.apply(i));
             stream.expect(i);
             stream.submit(i);
+            stream.accept(i);
         }
+        stream.close(n);
         outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
@@ -89,12 +97,15 @@ public class TestEventStream {
                 .flatMap(mapper)
                 .consume(results::add);
         List<String> expected = new ArrayList<>();
-        for (int i=0;i<1000;i++) {
+        int n = 1000;
+        for (int i=0;i<=n;i++) {
             String input = String.format("%d %d %d %d %d", i, i, i, i, i);
             expected.addAll(Streams.stream(mapper.apply(input)).toList());
             stream.expect(i);
             stream.submit(input);
+            stream.accept(i);
         }
+        stream.close(n);
         outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
@@ -110,11 +121,14 @@ public class TestEventStream {
                 .filter(predicate)
                 .consume(results::add);
         List<Integer> expected = new ArrayList<>();
-        for (int i=0;i<1000;i++) {
+        int n = 1000;
+        for (int i=0;i<=n;i++) {
             if (predicate.test(i)) expected.add(i);
             stream.expect(i);
             stream.submit(i);
+            stream.accept(i);
         }
+        stream.close(n);
         outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
@@ -128,7 +142,7 @@ public class TestEventStream {
         Function<String, Iterable<String>> splitMapper = x -> Arrays.stream(x.split(" ")).toList();
         Consumer<String> sleep = x -> {
             try {
-                Thread.sleep(100);
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -138,18 +152,20 @@ public class TestEventStream {
         ConsumedEventStream<Integer> outStream = stream
                 .consume(sleep)
                 .flatMap(splitMapper)
+                .consume(sleep)
                 .map(parseIntMapper)
                 .map(multiplyMapper)
                 .consume(results::add);
         List<Integer> expected = new ArrayList<>();
-        for (int i=0;i<1000;i++) {
+        int n = 1000;
+        for (int i=0;i<=n;i++) {
             String input = String.format("%d %d %d %d %d", i, i, i, i, i);
             expected.addAll(Streams.stream(splitMapper.apply(input)).map(parseIntMapper).map(multiplyMapper).toList());
             stream.expect(i);
             stream.submit(input);
             stream.accept(i);
         }
-        stream.close(999);
+        stream.close(n);
         outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
