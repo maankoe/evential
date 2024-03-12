@@ -3,7 +3,6 @@ package maankoe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -51,10 +50,5 @@ public abstract class BaseEventStream<O> {
         ConsumedEventStream<O> ret = new ConsumedEventStream<>(this.loop, consumer);
         this.listener = ret;
         return ret;
-//        GeneralEventStream<O, O> ret = new GeneralEventStream<>(
-//                loop, new EventFunction.Consumer<>(consumer), "CONSUME"
-//        );
-//        this.listener = ret;
-//        return ret;
     }
 }

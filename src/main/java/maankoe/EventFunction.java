@@ -7,6 +7,14 @@ import java.util.function.Predicate;
 public interface EventFunction<I, O> {
     Optional<O> apply(I item);
 
+    class Identity<I> implements EventFunction<I, I> {
+        public Identity() {}
+        @Override
+        public Optional<I> apply(I item) {
+            return Optional.of(item);
+        }
+    }
+
     class Consumer<I> implements EventFunction<I, I> {
         private final java.util.function.Consumer<I> consumer;
         public Consumer(java.util.function.Consumer<I> consumer) {

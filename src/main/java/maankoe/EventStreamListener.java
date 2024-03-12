@@ -2,12 +2,11 @@ package maankoe;
 
 
 public interface EventStreamListener<T> {
-    default void expect(long index) {}
-    default void submit(T item) {this.submit(item, (int) item);}
-    default void submit(T item, long index) {}
-    default void accept(long index) {}
-    default void close(long index) {}
-    default void block() {}
+    void expect(long index);
+    void submit(T item, long index);
+    void accept(long index);
+    void close(long index);
+    void block();
 
     class Dummy<T> implements EventStreamListener<T> {
         @Override

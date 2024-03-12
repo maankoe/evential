@@ -5,7 +5,6 @@ public class GeneralEventStream<I, O>
         extends BaseEventStream<O>
         implements EventStreamListener<I> {
 
-    private final BlockingStrategy blockingStrategy;
     private final SubmitStrategy<I, O> submitStrategy;
 
     public GeneralEventStream(
@@ -13,15 +12,24 @@ public class GeneralEventStream<I, O>
             EventFunction<I, O> function,
             String name
     ) {
-        super(loop);
-        this.blockingStrategy = new BlockingStrategy.Expecting();
-        this.submitStrategy = new SubmitStrategy.Single<>(
-                loop, function, this.blockingStrategy, name
+        this(
+                loop,
+                new SubmitStrategy.Single<>(
+                    loop, function, new BlockingStrategy.Expecting(), name
+                )
         );
     }
 
+    public GeneralEventStream(
+            EventLoop loop,
+            SubmitStrategy<I, O> submitStrategy
+    ) {
+        super(loop);
+        this.submitStrategy = submitStrategy;
+    }
+
     public void expect(long index) {
-        this.blockingStrategy.expect(index);
+        this.submitStrategy.expect(index);
     }
 
     public void submit(I item, long index) {
@@ -29,7 +37,7 @@ public class GeneralEventStream<I, O>
     }
 
     public void accept(long index) {
-        this.blockingStrategy.accept(index);
+        this.submitStrategy.accept(index);
     }
 
     public void close(long index) {
@@ -37,6 +45,6 @@ public class GeneralEventStream<I, O>
     }
 
     public void block() {
-        this.blockingStrategy.block();
+        this.submitStrategy.block();
     }
 }
