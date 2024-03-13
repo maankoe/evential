@@ -19,17 +19,14 @@ public interface SubmitStrategy<I, O> {
         private final EventFunction<I, O> function;
         private final IndexGenerator indexGenerator;
         private final BlockingStrategy blockingStrategy;
-        private final String name;
 
         public Single(
                 EventLoop loop,
                 EventFunction<I, O> function,
-                BlockingStrategy blockingStrategy,
-                String name
+                BlockingStrategy blockingStrategy
         ) {
             this.loop = loop;
             this.function = function;
-            this.name = name;
             this.blockingStrategy = blockingStrategy;
             this.indexGenerator = new IndexGenerator();
         }
@@ -43,7 +40,6 @@ public interface SubmitStrategy<I, O> {
                 I item,
                 EventStreamListener<O> listener
         ) {
-            LOGGER.debug("{} {}", this.name, item);
             Event<Optional<O>> event = loop.submit(() -> this.function.apply(item));
             long submitIndex = this.indexGenerator.next();
             listener.expect(submitIndex);
@@ -75,17 +71,14 @@ public interface SubmitStrategy<I, O> {
         private final EventFunction<I, Iterable<O>> function;
         private final IndexGenerator indexGenerator;
         private final BlockingStrategy blockingStrategy;
-        private final String name;
 
         public Multiple(
                 EventLoop loop,
                 EventFunction<I, Iterable<O>> function,
-                BlockingStrategy blockingStrategy,
-                String name
+                BlockingStrategy blockingStrategy
         ) {
             this.loop = loop;
             this.function = function;
-            this.name = name;
             this.blockingStrategy = blockingStrategy;
             this.indexGenerator = new IndexGenerator();
         }
@@ -99,7 +92,6 @@ public interface SubmitStrategy<I, O> {
                 I item,
                 EventStreamListener<O> listener
         ) {
-            LOGGER.debug("{} {}", this.name, item);
             Event<Optional<Iterable<O>>> event = loop.submit(() -> this.function.apply(item));
             long submitIndex = this.indexGenerator.next();
             listener.expect(submitIndex);

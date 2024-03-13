@@ -8,23 +8,23 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static maankoe.Utilities.sleepConsumer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestEventStream {
-    private void consume(int i) {}
     @Test
     public void testConsume() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
-        Collection<Integer> results = new ConcurrentLinkedQueue<>();
+        Collection<Integer> results = new ArrayList<>();
         EventStream<Integer> stream = new EventStream<>(loop);
-        ConsumedEventStream<Integer> outStream = stream.consume(results::add);
+        ConsumedEventStream<Integer> outStream = stream
+                .consume(sleepConsumer(10))
+                .consume(results::add);
         List<Integer> expected = new ArrayList<>();
         int n = 1000;
         for (int i=0;i<=n;i++) {
@@ -34,7 +34,6 @@ public class TestEventStream {
             stream.accept(i);
         }
         stream.close(n);
-        outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
 
@@ -57,7 +56,6 @@ public class TestEventStream {
             stream.accept(i);
         }
         stream.close(n);
-        outStream.block();
         assertThat(resultsA).containsExactlyInAnyOrderElementsOf(expected);
         assertThat(resultsB).containsExactlyInAnyOrderElementsOf(expected);
     }
@@ -81,7 +79,6 @@ public class TestEventStream {
             stream.accept(i);
         }
         stream.close(n);
-        outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
 
@@ -106,7 +103,6 @@ public class TestEventStream {
             stream.accept(i);
         }
         stream.close(n);
-        outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
 
@@ -129,7 +125,6 @@ public class TestEventStream {
             stream.accept(i);
         }
         stream.close(n);
-        outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
 
@@ -140,19 +135,11 @@ public class TestEventStream {
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<String> stream = new EventStream<>(loop);
         Function<String, Iterable<String>> splitMapper = x -> Arrays.stream(x.split(" ")).toList();
-        Consumer<String> sleep = x -> {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        };
         Function<String, Integer> parseIntMapper = Integer::parseInt;
         Function<Integer, Integer> multiplyMapper = x -> x * 5;
         ConsumedEventStream<Integer> outStream = stream
-                .consume(sleep)
+                .consume(sleepConsumer(10))
                 .flatMap(splitMapper)
-                .consume(sleep)
                 .map(parseIntMapper)
                 .map(multiplyMapper)
                 .consume(results::add);
@@ -166,7 +153,6 @@ public class TestEventStream {
             stream.accept(i);
         }
         stream.close(n);
-        outStream.block();
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
     }
 }

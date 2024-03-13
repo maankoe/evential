@@ -10,9 +10,9 @@ public class FlatMappedEventStream<I, O> extends GeneralEventStream<I, O> {
                 new SubmitStrategy.Multiple<>(
                         loop,
                         new EventFunction.Mapper<>(mapper),
-                        new BlockingStrategy.Expecting(),
-                        "FLATMAP"
-                )
+                        new BlockingStrategy.Expecting("FLATMAP")
+                ),
+            "FLATMAP"
         );
     }
 }
