@@ -56,9 +56,4 @@ public class GeneralEventStream<I, O>
         LOGGER.info("{}: Closing stream at index {}", this.name, index);
         this.submitStrategy.close(index, this.listener);
     }
-
-    public void block() {
-        LOGGER.info("{}: Blocking stream", this.name);
-        this.submitStrategy.block();
-    }
 }

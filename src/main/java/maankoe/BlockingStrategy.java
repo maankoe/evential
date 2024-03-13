@@ -4,19 +4,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.Math.max;
 
 public interface BlockingStrategy {
-
     void expect(long index);
-    void close(long index);
     void accept(long index);
-    void block();
     void active(Event<?> event);
+    void close(long index);
+    void block();
 
     class Expecting implements BlockingStrategy {
         private final static Logger LOGGER = LoggerFactory.getLogger(BlockingStrategy.class);
@@ -54,6 +52,36 @@ public interface BlockingStrategy {
         }
 
         @Override
+        public void accept(long index) {
+            this.expecting.remove(index);
+            this.accepted.add(index);
+            if (this.isBlocked.get() && this.expecting.isEmpty()) {
+                LOGGER.info(
+                        "{}: Completed, accepted: {}, {}/{}",
+                        this.name, this.accepted.size(),
+                        this.maxExpecting, this.closeIndex
+                );
+                this.isSatisfied.complete(true);
+            }
+        }
+
+        @Override
+        public void active(Event<?> event) {
+            this.activeEvents.add(event);
+            event.onComplete(x -> {
+                this.activeEvents.remove(x);
+                if (this.isBlocked.get() && this.activeEvents.isEmpty()) {
+                    LOGGER.info(
+                            "{}: Completed, accepted: {}, {}/{}",
+                            this.name, this.accepted.size(),
+                            this.maxExpecting, this.closeIndex
+                    );
+                    this.isComplete.complete(true);
+                }
+            });
+        }
+
+        @Override
         public void close(long index) {
             this.closeIndex = index;
         }
@@ -79,36 +107,6 @@ public interface BlockingStrategy {
                 } catch (TimeoutException | InterruptedException | ExecutionException e) {
                     //do nothing
                 }
-            }
-        }
-
-        @Override
-        public void active(Event<?> event) {
-            this.activeEvents.add(event);
-            event.onDone(x -> {
-                this.activeEvents.remove(x);
-                if (this.isBlocked.get() && this.activeEvents.isEmpty()) {
-                    LOGGER.info(
-                            "{}: Completed, accepted: {}, {}/{}",
-                            this.name, this.accepted.size(),
-                            this.maxExpecting, this.closeIndex
-                    );
-                    this.isComplete.complete(true);
-                }
-            });
-        }
-
-        @Override
-        public void accept(long index) {
-            this.expecting.remove(index);
-            this.accepted.add(index);
-            if (this.isBlocked.get() && this.expecting.isEmpty()) {
-                LOGGER.info(
-                        "{}: Completed, accepted: {}, {}/{}",
-                        this.name, this.accepted.size(),
-                        this.maxExpecting, this.closeIndex
-                );
-                this.isSatisfied.complete(true);
             }
         }
     }

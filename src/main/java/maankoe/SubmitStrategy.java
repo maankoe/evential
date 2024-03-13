@@ -12,7 +12,6 @@ public interface SubmitStrategy<I, O> {
     void submit(I item, EventStreamListener<O> listener);
     void accept(long index);
     void close(long index, EventStreamListener<O> listener);
-    void block();
 
     class Single<I, O> implements SubmitStrategy<I, O> {
         private final EventLoop loop;
@@ -44,7 +43,7 @@ public interface SubmitStrategy<I, O> {
             this.blockingStrategy.active(event);
             long submitIndex = this.indexGenerator.next();
             listener.expect(submitIndex);
-            event.onComplete(ox -> {
+            event.onSuccess(ox -> {
                 ox.ifPresent(listener::submit);
                 listener.accept(submitIndex);
             });
@@ -57,13 +56,8 @@ public interface SubmitStrategy<I, O> {
 
         public void close(long index, EventStreamListener<O> listener) {
             this.blockingStrategy.close(index);
-            this.block();
-            listener.close(this.indexGenerator.current());
-        }
-
-        @Override
-        public void block() {
             this.blockingStrategy.block();
+            listener.close(this.indexGenerator.current());
         }
     }
 
@@ -96,7 +90,7 @@ public interface SubmitStrategy<I, O> {
             Event<Optional<Iterable<O>>> event = loop.submit(() -> this.function.apply(item));
             long submitIndex = this.indexGenerator.next();
             listener.expect(submitIndex);
-            event.onComplete(ox -> {
+            event.onSuccess(ox -> {
                 ox.ifPresent(
                         xi -> xi.forEach(listener::submit)
                 );
@@ -111,13 +105,8 @@ public interface SubmitStrategy<I, O> {
 
         public void close(long index, EventStreamListener<O> listener) {
             this.blockingStrategy.close(index);
-            this.block();
-            listener.close(this.indexGenerator.current());
-        }
-
-        @Override
-        public void block() {
             this.blockingStrategy.block();
+            listener.close(this.indexGenerator.current());
         }
     }
 }

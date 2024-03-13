@@ -3,9 +3,7 @@ package maankoe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -15,22 +13,22 @@ public class Event<T> {
 
     private final Future<T> future;
     private final AtomicBoolean isDone;
-    private final Collection<OnceConsumer<T>> onComplete;
+    private final Collection<OnceConsumer<T>> onSuccess;
     private final Collection<OnceConsumer<Exception>> onError;
     private final Collection<OnceConsumer<Event<T>>> onDone;
 
     public Event(Future<T> future) {
         this.future = future;
         this.isDone = new AtomicBoolean(false);
-        this.onComplete = new ConcurrentLinkedQueue<>();
+        this.onSuccess = new ConcurrentLinkedQueue<>();
         this.onError = new ConcurrentLinkedQueue<>();
         this.onDone = new ConcurrentLinkedQueue<>();
     }
 
-    public Event<T> onComplete(Consumer<T> consumer) {
-        LOGGER.debug("ON_COMPLETE {}", consumer);
+    public Event<T> onSuccess(Consumer<T> consumer) {
+        LOGGER.debug("ON_SUCCESS {}", consumer);
         OnceConsumer<T> onceConsumer = new OnceConsumer<>(consumer);
-        this.onComplete.add(onceConsumer);
+        this.onSuccess.add(onceConsumer);
         if (this.isDone()) {
             try {
                 LOGGER.debug("ALREADY_COMPLETED {}", this.future.get());
@@ -47,6 +45,7 @@ public class Event<T> {
         this.onError.add(onceConsumer);
         if (this.isDone()) {
             try {
+                LOGGER.debug("ALREADY_COMPLETED {}", this.future.get());
                 this.future.get();
             } catch (CancellationException | ExecutionException | InterruptedException e) {
                 onceConsumer.accept(e);
@@ -55,7 +54,7 @@ public class Event<T> {
         return this;
     }
 
-    public Event<T> onDone(Consumer<Event<T>> consumer) {
+    public Event<T> onComplete(Consumer<Event<T>> consumer) {
         OnceConsumer<Event<T>> onceConsumer = new OnceConsumer<>(consumer);
         this.onDone.add(onceConsumer);
         if (this.isDone()) {
@@ -72,32 +71,32 @@ public class Event<T> {
 
     public void complete() {
         if (!this.isDone()) {
-            this.error(new IllegalStateException("Future emitted but not done."));
+            this.completeError(new IllegalStateException("Future emitted but not done."));
         } else {
-            this.done();
+            this.completeEither();
             try {
-                this.complete(this.future.get());
+                this.completeSuccess(this.future.get());
             } catch (CancellationException | ExecutionException | InterruptedException e) {
-                this.error(e);
+                this.completeError(e);
             }
         }
     }
 
-    private void done() {
+    private void completeEither() {
         LOGGER.debug("DONE {}", this);
         for (Consumer<Event<T>> consumer : this.onDone) {
             consumer.accept(this);
         }
     }
 
-    private void complete(T result) {
+    private void completeSuccess(T result) {
         LOGGER.debug("COMPLETE {}", result);
-        for (Consumer<T> consumer : this.onComplete) {
+        for (Consumer<T> consumer : this.onSuccess) {
             consumer.accept(result);
         }
     }
 
-    private void error(Exception error) {
+    private void completeError(Exception error) {
         for (Consumer<Exception> consumer : this.onError) {
             consumer.accept(error);
         }

@@ -1,8 +1,6 @@
 package maankoe;
 
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,7 +28,7 @@ public class TestEventLoop {
         SideEffectConsumer<Integer> consumer = new SideEffectConsumer<>();
         int value = 1;
         loop.submit(() -> value)
-                .onComplete(consumer);
+                .onSuccess(consumer);
         waitForCompletion(loop);
         assertThat(consumer.items).containsExactly(value);
     }
@@ -45,7 +43,7 @@ public class TestEventLoop {
             int value = i;
             values.add(value);
             loop.submit(() -> value)
-                    .onComplete(consumer);
+                    .onSuccess(consumer);
         }
         waitForCompletion(loop);
         assertThat(consumer.items).containsAll(values);
@@ -60,9 +58,9 @@ public class TestEventLoop {
         int value = 3;
         int multiplier = 2;
         loop.submit(() -> value)
-                .onComplete(x ->
+                .onSuccess(x ->
                         loop.submit(() -> x * multiplier)
-                                .onComplete(consumer)
+                                .onSuccess(consumer)
                                 .onError(errorConsumer)
                 );
         Thread.sleep(100);

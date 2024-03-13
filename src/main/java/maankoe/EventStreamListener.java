@@ -6,7 +6,6 @@ public interface EventStreamListener<T> {
     void submit(T item);
     void accept(long index);
     void close(long index);
-    void block();
 
     class Dummy<T> implements EventStreamListener<T> {
         @Override
@@ -27,11 +26,6 @@ public interface EventStreamListener<T> {
         @Override
         public void close(long index) {
             //do nothing
-        }
-
-        @Override
-        public void block() {
-            // do nothing
         }
     }
 
