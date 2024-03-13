@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -15,37 +16,18 @@ public interface BlockingStrategy {
     void close(long index);
     void accept(long index);
     void block();
-
-    class None implements BlockingStrategy {
-        @Override
-        public void expect(long index) {
-            //do nothing
-        }
-
-        @Override
-        public void close(long index) {
-            // do nothing
-        }
-
-        @Override
-        public void accept(long index) {
-            // do nothing
-        }
-
-        @Override
-        public void block() {
-            // do nothing
-        }
-    }
+    void active(Event<?> event);
 
     class Expecting implements BlockingStrategy {
         private final static Logger LOGGER = LoggerFactory.getLogger(BlockingStrategy.class);
 
         private final AtomicBoolean isBlocked = new AtomicBoolean(false);
         private CompletableFuture<Boolean> isComplete = null;
+        private CompletableFuture<Boolean> isSatisfied = null;
 
         private final String name;
         private final Collection<Long> expecting;
+        private final Collection<Event<?>> activeEvents;
         private final Collection<Long> accepted;
         private long closeIndex = Long.MAX_VALUE;
         private long maxExpecting = Long.MIN_VALUE;
@@ -53,6 +35,7 @@ public interface BlockingStrategy {
         public Expecting(String name) {
             this.name = name;
             this.expecting = ConcurrentHashMap.newKeySet();
+            this.activeEvents = ConcurrentHashMap.newKeySet();
             this.accepted = ConcurrentHashMap.newKeySet();
         }
 
@@ -79,19 +62,40 @@ public interface BlockingStrategy {
         public void block() {
             LOGGER.info("{}: BLOCK closeIndex={}, maxExpecting={}", this.name, closeIndex, maxExpecting);
             this.isBlocked.compareAndSet(false, true);
+            this.isSatisfied = new CompletableFuture<>();
             this.isComplete = new CompletableFuture<>();
-            while (!this.expecting.isEmpty() || this.maxExpecting < this.closeIndex) {
+            while (!this.expecting.isEmpty() ||
+                    !this.activeEvents.isEmpty() ||
+                    this.maxExpecting < this.closeIndex) {
                 LOGGER.info(
-                        "{}: AWAITING {} inputs, {}/{}",
-                        this.name, this.expecting.size(),
+                        "{}: EXPECTING {}, AWAITING {}, inputs, {}/{}",
+                        this.name,
+                        this.expecting.size(), this.activeEvents.size(),
                         this.maxExpecting, this.closeIndex
                 );
                 try {
+                    this.isSatisfied.get(1000, TimeUnit.MILLISECONDS);
                     this.isComplete.get(1000, TimeUnit.MILLISECONDS);
                 } catch (TimeoutException | InterruptedException | ExecutionException e) {
                     //do nothing
                 }
             }
+        }
+
+        @Override
+        public void active(Event<?> event) {
+            this.activeEvents.add(event);
+            event.onDone(x -> {
+                this.activeEvents.remove(x);
+                if (this.isBlocked.get() && this.activeEvents.isEmpty()) {
+                    LOGGER.info(
+                            "{}: Completed, accepted: {}, {}/{}",
+                            this.name, this.accepted.size(),
+                            this.maxExpecting, this.closeIndex
+                    );
+                    this.isComplete.complete(true);
+                }
+            });
         }
 
         @Override
@@ -104,7 +108,7 @@ public interface BlockingStrategy {
                         this.name, this.accepted.size(),
                         this.maxExpecting, this.closeIndex
                 );
-                this.isComplete.complete(true);
+                this.isSatisfied.complete(true);
             }
         }
     }

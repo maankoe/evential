@@ -41,6 +41,7 @@ public interface SubmitStrategy<I, O> {
                 EventStreamListener<O> listener
         ) {
             Event<Optional<O>> event = loop.submit(() -> this.function.apply(item));
+            this.blockingStrategy.active(event);
             long submitIndex = this.indexGenerator.next();
             listener.expect(submitIndex);
             event.onComplete(ox -> {

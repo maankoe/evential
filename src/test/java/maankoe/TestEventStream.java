@@ -2,6 +2,8 @@ package maankoe;
 
 import org.assertj.core.util.Streams;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,15 +18,18 @@ import static maankoe.Utilities.sleepConsumer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestEventStream {
+    private final static Logger LOGGER = LoggerFactory.getLogger(TestEventStream.class);
+
     @Test
     public void testConsume() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
-        Collection<Integer> results = new ArrayList<>();
+        Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
         ConsumedEventStream<Integer> outStream = stream
-                .consume(sleepConsumer(10))
-                .consume(results::add);
+                .consume(sleepConsumer(25))
+                .consume(results::add)
+                .consume(sleepConsumer(25));
         List<Integer> expected = new ArrayList<>();
         int n = 1000;
         for (int i=0;i<=n;i++) {
@@ -34,7 +39,26 @@ public class TestEventStream {
             stream.accept(i);
         }
         stream.close(n);
+        LOGGER.info("{}", loop.numEvents());
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
+    }
+
+    @Test
+    public void testSlowConsume() {
+        EventLoop loop = new EventLoop();
+        Executors.newSingleThreadExecutor().submit(loop::run);
+        EventStream<Integer> stream = new EventStream<>(loop);
+        ConsumedEventStream<Integer> outStream = stream
+                .consume(sleepConsumer(25));
+        int n = 1000;
+        for (int i=0;i<=n;i++) {
+            stream.expect(i);
+            stream.submit(i);
+            stream.accept(i);
+        }
+        stream.close(n);
+        LOGGER.info("{}", loop.numEvents());
+        assertThat(loop.hasEvents()).isFalse();
     }
 
     @Test

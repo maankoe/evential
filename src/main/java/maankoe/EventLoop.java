@@ -58,4 +58,8 @@ public class EventLoop {
     public boolean hasEvents() {
         return !this.events.isEmpty();
     }
+
+    public int numEvents() {
+        return this.events.size();
+    }
 }

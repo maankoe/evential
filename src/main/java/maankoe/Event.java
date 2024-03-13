@@ -17,12 +17,14 @@ public class Event<T> {
     private final AtomicBoolean isDone;
     private final Collection<OnceConsumer<T>> onComplete;
     private final Collection<OnceConsumer<Exception>> onError;
+    private final Collection<OnceConsumer<Event<T>>> onDone;
 
     public Event(Future<T> future) {
         this.future = future;
         this.isDone = new AtomicBoolean(false);
         this.onComplete = new ConcurrentLinkedQueue<>();
         this.onError = new ConcurrentLinkedQueue<>();
+        this.onDone = new ConcurrentLinkedQueue<>();
     }
 
     public Event<T> onComplete(Consumer<T> consumer) {
@@ -42,13 +44,23 @@ public class Event<T> {
 
     public Event<T> onError(Consumer<Exception> consumer) {
         OnceConsumer<Exception> onceConsumer = new OnceConsumer<>(consumer);
-        this.onError.add(new OnceConsumer<>(consumer));
+        this.onError.add(onceConsumer);
         if (this.isDone()) {
             try {
                 this.future.get();
             } catch (CancellationException | ExecutionException | InterruptedException e) {
                 onceConsumer.accept(e);
             }
+        }
+        return this;
+    }
+
+    public Event<T> onDone(Consumer<Event<T>> consumer) {
+        OnceConsumer<Event<T>> onceConsumer = new OnceConsumer<>(consumer);
+        this.onDone.add(onceConsumer);
+        if (this.isDone()) {
+            LOGGER.debug("ALREADY_COMPLETED {}", this.future);
+            onceConsumer.accept(this);
         }
         return this;
     }
@@ -62,11 +74,19 @@ public class Event<T> {
         if (!this.isDone()) {
             this.error(new IllegalStateException("Future emitted but not done."));
         } else {
+            this.done();
             try {
                 this.complete(this.future.get());
             } catch (CancellationException | ExecutionException | InterruptedException e) {
                 this.error(e);
             }
+        }
+    }
+
+    private void done() {
+        LOGGER.debug("DONE {}", this);
+        for (Consumer<Event<T>> consumer : this.onDone) {
+            consumer.accept(this);
         }
     }
 
