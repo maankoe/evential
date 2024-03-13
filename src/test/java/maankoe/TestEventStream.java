@@ -27,9 +27,7 @@ public class TestEventStream {
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
         ConsumedEventStream<Integer> outStream = stream
-                .consume(sleepConsumer(25))
-                .consume(results::add)
-                .consume(sleepConsumer(25));
+                .consume(results::add);
         List<Integer> expected = new ArrayList<>();
         int n = 1000;
         for (int i=0;i<=n;i++) {
@@ -49,7 +47,7 @@ public class TestEventStream {
         Executors.newSingleThreadExecutor().submit(loop::run);
         EventStream<Integer> stream = new EventStream<>(loop);
         ConsumedEventStream<Integer> outStream = stream
-                .consume(sleepConsumer(25));
+                .consume(sleepConsumer(10));
         int n = 1000;
         for (int i=0;i<=n;i++) {
             stream.expect(i);

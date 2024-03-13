@@ -21,7 +21,10 @@ public class GeneralEventStream<I, O>
         this(
                 loop,
                 new SubmitStrategy.Single<>(
-                    loop, function, new BlockingStrategy.Expecting(name)
+                    loop,
+                    function,
+                    new ListenerBlockingStrategy(name),
+                    new EventBlockingStrategy(name)
                 ),
                 name
         );
