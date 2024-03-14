@@ -1,5 +1,6 @@
 package maankoe.loop;
 
+import maankoe.utilities.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,14 +16,14 @@ public class Event<T> {
     private final AtomicBoolean isDone;
     private final Collection<OnceConsumer<T>> onSuccess;
     private final Collection<OnceConsumer<Exception>> onError;
-    private final Collection<OnceConsumer<Event<T>>> onDone;
+    private final Collection<OnceConsumer<Result<T>>> onComplete;
 
     public Event(Future<T> future) {
         this.future = future;
         this.isDone = new AtomicBoolean(false);
         this.onSuccess = new ConcurrentLinkedQueue<>();
         this.onError = new ConcurrentLinkedQueue<>();
-        this.onDone = new ConcurrentLinkedQueue<>();
+        this.onComplete = new ConcurrentLinkedQueue<>();
     }
 
     public Event<T> onSuccess(Consumer<T> consumer) {
@@ -54,12 +55,12 @@ public class Event<T> {
         return this;
     }
 
-    public Event<T> onComplete(Consumer<Event<T>> consumer) {
-        OnceConsumer<Event<T>> onceConsumer = new OnceConsumer<>(consumer);
-        this.onDone.add(onceConsumer);
+    public Event<T> onComplete(Consumer<Result<T>> consumer) {
+        OnceConsumer<Result<T>> onceConsumer = new OnceConsumer<>(consumer);
+        this.onComplete.add(onceConsumer);
         if (this.isDone()) {
             LOGGER.debug("ALREADY_COMPLETED {}", this.future);
-            onceConsumer.accept(this);
+            onceConsumer.accept(this.result());
         }
         return this;
     }
@@ -69,24 +70,32 @@ public class Event<T> {
         return this.isDone.get();
     }
 
+    private Result<T> result() {
+        try {
+            return Result.Success(this.future.get());
+        } catch (CancellationException | ExecutionException | InterruptedException e) {
+            return Result.Error(e);
+        }
+    }
+
     public void complete() {
         if (!this.isDone()) {
             this.completeError(new IllegalStateException("Future emitted but not done."));
         } else {
-            try {
-                this.completeSuccess(this.future.get());
-            } catch (CancellationException | ExecutionException | InterruptedException e) {
-                this.completeError(e);
-            } finally {
-                this.completeEither();
+            Result<T> result = this.result();
+            if (result.isSuccess()) {
+                this.completeSuccess(result.success());
+            } else {
+                this.completeError(result.error());
             }
+            this.completeResult(result);
         }
     }
 
-    private void completeEither() {
+    private void completeResult(Result<T> result) {
         LOGGER.debug("DONE {}", this);
-        for (Consumer<Event<T>> consumer : this.onDone) {
-            consumer.accept(this);
+        for (Consumer<Result<T>> consumer : this.onComplete) {
+            consumer.accept(result);
         }
     }
 
