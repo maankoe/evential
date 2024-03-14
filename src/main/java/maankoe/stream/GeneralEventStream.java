@@ -1,6 +1,10 @@
-package maankoe;
+package maankoe.stream;
 
 
+import maankoe.stream.blocking.EventBlockingStrategy;
+import maankoe.stream.blocking.ListenerBlockingStrategy;
+import maankoe.stream.submit.SubmitStrategy;
+import maankoe.loop.EventLoop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +24,7 @@ public class GeneralEventStream<I, O>
     ) {
         this(
                 loop,
-                new SubmitStrategy.Single<>(
+                SubmitStrategy.single(
                     loop,
                     function,
                     new ListenerBlockingStrategy(name),

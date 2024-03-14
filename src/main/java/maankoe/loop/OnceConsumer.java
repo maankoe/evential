@@ -1,4 +1,4 @@
-package maankoe;
+package maankoe.loop;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;

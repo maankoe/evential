@@ -1,4 +1,4 @@
-package maankoe;
+package maankoe.loop;
 
 
 import org.slf4j.Logger;

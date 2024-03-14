@@ -1,4 +1,4 @@
-package maankoe;
+package maankoe.stream;
 
 
 public interface EventStreamListener<T> {

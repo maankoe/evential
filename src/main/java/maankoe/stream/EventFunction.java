@@ -1,4 +1,4 @@
-package maankoe;
+package maankoe.stream;
 
 import java.util.Optional;
 import java.util.function.Function;

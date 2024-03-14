@@ -1,5 +1,7 @@
-package maankoe;
+package maankoe.stream;
 
+
+import maankoe.loop.EventLoop;
 
 import java.util.function.Function;
 

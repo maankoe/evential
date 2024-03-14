@@ -1,5 +1,8 @@
 package maankoe;
 
+import maankoe.loop.EventLoop;
+import maankoe.stream.ConsumedEventStream;
+import maankoe.stream.EventStream;
 import org.assertj.core.util.Streams;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

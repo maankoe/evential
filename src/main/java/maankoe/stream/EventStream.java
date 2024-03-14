@@ -1,5 +1,7 @@
-package maankoe;
+package maankoe.stream;
 
+
+import maankoe.loop.EventLoop;
 
 public class EventStream<O> extends GeneralEventStream<O, O> {
 

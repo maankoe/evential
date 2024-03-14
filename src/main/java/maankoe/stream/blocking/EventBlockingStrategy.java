@@ -1,5 +1,6 @@
-package maankoe;
+package maankoe.stream.blocking;
 
+import maankoe.loop.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

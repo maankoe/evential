@@ -1,5 +1,6 @@
 package maankoe;
 
+import maankoe.loop.EventLoop;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

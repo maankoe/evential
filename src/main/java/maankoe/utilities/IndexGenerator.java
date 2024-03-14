@@ -1,4 +1,4 @@
-package maankoe;
+package maankoe.utilities;
 
 import java.util.concurrent.atomic.AtomicLong;
 
