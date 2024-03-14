@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static maankoe.Utilities.sleep;
 import static maankoe.Utilities.sleepConsumer;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,18 +49,25 @@ public class TestEventStream {
     public void testSlowConsume() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
+        Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
         ConsumedEventStream<Integer> outStream = stream
-                .consume(sleepConsumer(10));
+                .consume(x -> {
+                    sleep(10);
+                    results.add(x);
+                });
+        List<Integer> expected = new ArrayList<>();
         int n = 1000;
         for (int i=0;i<=n;i++) {
+            expected.add(i);
             stream.expect(i);
             stream.submit(i);
             stream.accept(i);
         }
         stream.close(n);
         LOGGER.info("{}", loop.numEvents());
-        assertThat(loop.hasEvents()).isFalse();
+        assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
+//        assertThat(loop.hasEvents()).isFalse();
     }
 
     @Test

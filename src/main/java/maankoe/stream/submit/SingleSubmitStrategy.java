@@ -40,13 +40,11 @@ public class SingleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
             EventStreamListener<O> listener
     ) {
         Event<Optional<O>> event = loop.submit(() -> this.function.apply(item));
-        this.eventBlockingStrategy.active(event);
+        this.eventBlockingStrategy.submit(event);
         long submitIndex = this.indexGenerator.next();
         listener.expect(submitIndex);
-        event.onSuccess(ox -> {
-            ox.ifPresent(listener::submit);
-            listener.accept(submitIndex);
-        });
+        event.onSuccess(ox -> ox.ifPresent(listener::submit));
+        event.onComplete(ox -> listener.accept(submitIndex));
     }
 
     @Override

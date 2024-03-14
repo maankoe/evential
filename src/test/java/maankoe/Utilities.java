@@ -10,13 +10,15 @@ public class Utilities {
     private final static Logger LOGGER = LoggerFactory.getLogger(TestEventLoop.class);
 
     public static <T> Consumer<T> sleepConsumer(int millis) {
-        return x -> {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        };
+        return x -> sleep(millis);
+    }
+
+    public static void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void waitForCompletion(EventLoop loop) {

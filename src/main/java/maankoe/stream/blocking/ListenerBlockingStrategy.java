@@ -6,65 +6,65 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.Math.max;
 
 public class ListenerBlockingStrategy {
     private final static Logger LOGGER = LoggerFactory.getLogger(ListenerBlockingStrategy.class);
 
-    private final AtomicBoolean isBlocked = new AtomicBoolean(false);
     private CompletableFuture<Boolean> isSatisfied = null;
 
     private final String name;
-    private final Collection<Long> expecting;
-    private final Collection<Long> accepted;
-    private long closeIndex = Long.MAX_VALUE;
-    private long maxExpecting = Long.MIN_VALUE;
+    private final AtomicLong ticker;
+    private final AtomicLong closeIndex;
+    private final AtomicLong maxExpecting;
+    private final AtomicBoolean isBlocked;
 
     public ListenerBlockingStrategy(String name) {
         this.name = name;
-        this.expecting = ConcurrentHashMap.newKeySet();
-        this.accepted = ConcurrentHashMap.newKeySet();
+        this.ticker = new AtomicLong(0);
+        this.closeIndex = new AtomicLong(Long.MAX_VALUE);
+        this.maxExpecting = new AtomicLong(Long.MIN_VALUE);
+        this.isBlocked = new AtomicBoolean(false);
     }
 
     public void expect(long index) {
-        if (index >= this.closeIndex) {
+        if (index >= this.closeIndex.get()) {
             LOGGER.error("Cannot expect {} on stream closed at {}", index, this.closeIndex);
             throw new IllegalStateException(String.format(
                     "Stream is closed and cannot expect more input, closed at %d, received %d",
-                    this.closeIndex,
+                    this.closeIndex.get(),
                     index
             ));
         }
-        this.expecting.add(index);
-        this.maxExpecting = max(this.maxExpecting, index);
+        this.ticker.getAndIncrement();
+        this.maxExpecting.getAndUpdate(x -> max(x, index));
     }
 
     public void accept(long index) {
-        this.expecting.remove(index);
-        this.accepted.add(index);
-        if (this.isBlocked.get() && this.expecting.isEmpty()) {
+        this.ticker.getAndDecrement();
+        if (this.isBlocked.get() && this.ticker.get() == 0) {
             LOGGER.info(
-                    "{}: Completed, accepted: {}, {}/{}",
-                    this.name, this.accepted.size(),
-                    this.maxExpecting, this.closeIndex
+                    "{}: Completed, accepted: {}/{}",
+                    this.name, this.maxExpecting, this.closeIndex
             );
             this.isSatisfied.complete(true);
         }
     }
 
     public void close(long index) {
-        this.closeIndex = index;
+        this.closeIndex.getAndSet(index);
     }
 
     public void block() {
         LOGGER.info("{}: BLOCK closeIndex={}, maxExpecting={}", this.name, closeIndex, maxExpecting);
         this.isBlocked.compareAndSet(false, true);
         this.isSatisfied = new CompletableFuture<>();
-        while (!this.expecting.isEmpty() || this.maxExpecting < this.closeIndex) {
+        while (this.ticker.get() != 0 || this.maxExpecting.get() < this.closeIndex.get()) {
             LOGGER.info(
                     "{}: EXPECTING {}, inputs, {}/{}",
-                    this.name,  this.expecting.size(),
+                    this.name,  this.ticker.get(),
                     this.maxExpecting, this.closeIndex
             );
             try {

@@ -73,11 +73,12 @@ public class Event<T> {
         if (!this.isDone()) {
             this.completeError(new IllegalStateException("Future emitted but not done."));
         } else {
-            this.completeEither();
             try {
                 this.completeSuccess(this.future.get());
             } catch (CancellationException | ExecutionException | InterruptedException e) {
                 this.completeError(e);
+            } finally {
+                this.completeEither();
             }
         }
     }

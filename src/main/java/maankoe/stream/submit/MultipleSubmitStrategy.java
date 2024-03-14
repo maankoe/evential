@@ -42,12 +42,12 @@ class MultipleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
         Event<Optional<Iterable<O>>> event = loop.submit(() -> this.function.apply(item));
         long submitIndex = this.indexGenerator.next();
         listener.expect(submitIndex);
-        event.onSuccess(ox -> {
+        event.onSuccess(ox ->
             ox.ifPresent(
                     xi -> xi.forEach(listener::submit)
-            );
-            listener.accept(submitIndex);
-        });
+            )
+        );
+        event.onComplete(ox -> listener.accept(submitIndex));
     }
 
     @Override

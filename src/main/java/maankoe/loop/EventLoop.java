@@ -43,8 +43,8 @@ public class EventLoop {
     }
 
     private <T> void emit(Event<T> event) {
-        this.events.remove(event);
         event.complete();
+        this.events.remove(event);
     }
 
     public void stop() {
