@@ -3,6 +3,7 @@ package maankoe;
 import maankoe.loop.EventLoop;
 import maankoe.stream.ConsumedEventStream;
 import maankoe.stream.EventStream;
+import maankoe.stream.base.BaseEventStream;
 import net.bytebuddy.implementation.bytecode.Throw;
 import org.assertj.core.util.Streams;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ public class TestEventStreamErrors {
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         Collection<Throwable> errors = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
-        ConsumedEventStream<Integer> outStream = stream
+        BaseEventStream<Integer> outStream = stream
                 .consume(results::add)
                 .consumeError(errors::add)
                 .consume(results::add);
@@ -62,7 +63,7 @@ public class TestEventStreamErrors {
         Function<Integer, Integer> mapping = x -> {
             throw new IllegalStateException(errorGenerator.apply(x));
         };
-        ConsumedEventStream<Integer> outStream = stream
+        BaseEventStream<Integer> outStream = stream
                 .map(mapping)
                 .consumeError(e -> errors.add(e.getMessage()))
                 .consume(results::add);
@@ -87,7 +88,7 @@ public class TestEventStreamErrors {
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
         Function<Throwable, Integer> mapping = x -> Integer.parseInt(x.getMessage());
-        ConsumedEventStream<Integer> outStream = stream
+        BaseEventStream<Integer> outStream = stream
                 .mapError(mapping)
                 .consume(results::add);
         List<Integer> expected = new ArrayList<>();
@@ -111,7 +112,7 @@ public class TestEventStreamErrors {
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         Collection<Throwable> errors = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
-        ConsumedEventStream<Integer> outStream = stream
+        BaseEventStream<Integer> outStream = stream
                 .consumeError(errors::add)
                 .consume(results::add);
         List<Integer> expected = new ArrayList<>();

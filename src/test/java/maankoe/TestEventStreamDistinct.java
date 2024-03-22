@@ -3,6 +3,7 @@ package maankoe;
 import maankoe.loop.EventLoop;
 import maankoe.stream.ConsumedEventStream;
 import maankoe.stream.EventStream;
+import maankoe.stream.base.BaseEventStream;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -18,7 +19,7 @@ public class TestEventStreamDistinct {
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
-        ConsumedEventStream<Integer> outStream = stream
+        BaseEventStream<Integer> outStream = stream
                 .distinct(Function.identity())
                 .consume(results::add);
         Set<Integer> expected = new HashSet<>();
@@ -43,7 +44,7 @@ public class TestEventStreamDistinct {
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         EventStream<Integer> stream = new EventStream<>(loop);
         Function<Integer, Integer> key = x -> x / 2;
-        ConsumedEventStream<Integer> outStream = stream
+        BaseEventStream<Integer> outStream = stream
                 .distinct(key)
                 .consume(results::add);
         Set<Integer> observed = new HashSet<>();
