@@ -8,9 +8,8 @@ import maankoe.stream.base.EventStreamListener;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
 import maankoe.utilities.IndexGenerator;
+import maankoe.utilities.Optional;
 import maankoe.utilities.Result;
-
-import java.util.Optional;
 
 public class SingleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
     private final EventLoop loop;

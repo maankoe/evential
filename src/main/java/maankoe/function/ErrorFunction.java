@@ -1,9 +1,9 @@
 package maankoe.function;
 
 
+import maankoe.utilities.Optional;
 import maankoe.utilities.Result;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 

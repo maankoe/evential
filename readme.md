@@ -1,6 +1,4 @@
 ## TODO
- * error flow
- * Optional.of - cannnot be null in Mapping case
  * sorted
  * distinct
  * take

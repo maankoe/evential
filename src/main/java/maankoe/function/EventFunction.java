@@ -1,6 +1,7 @@
 package maankoe.function;
 
-import java.util.Optional;
+import maankoe.utilities.Optional;
+
 import java.util.function.Function;
 import java.util.function.Predicate;
 
