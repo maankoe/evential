@@ -3,6 +3,7 @@ package maankoe.stream;
 
 import maankoe.function.EventFunction;
 import maankoe.loop.EventLoop;
+import maankoe.stream.base.GeneralEventStream;
 
 import java.util.function.Function;
 

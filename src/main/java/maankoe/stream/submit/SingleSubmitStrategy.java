@@ -4,7 +4,7 @@ import maankoe.function.ErrorFunction;
 import maankoe.loop.Event;
 import maankoe.loop.EventLoop;
 import maankoe.function.EventFunction;
-import maankoe.stream.EventStreamListener;
+import maankoe.stream.base.EventStreamListener;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
 import maankoe.utilities.IndexGenerator;

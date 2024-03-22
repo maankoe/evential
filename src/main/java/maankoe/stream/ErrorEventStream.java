@@ -2,7 +2,7 @@ package maankoe.stream;
 
 import maankoe.function.ErrorFunction;
 import maankoe.loop.EventLoop;
-import maankoe.stream.GeneralEventStream;
+import maankoe.stream.base.GeneralEventStream;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
 import maankoe.stream.submit.SubmitStrategy;

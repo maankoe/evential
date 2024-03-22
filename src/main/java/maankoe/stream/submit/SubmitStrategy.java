@@ -3,7 +3,7 @@ package maankoe.stream.submit;
 import maankoe.function.ErrorFunction;
 import maankoe.loop.EventLoop;
 import maankoe.function.EventFunction;
-import maankoe.stream.EventStreamListener;
+import maankoe.stream.base.EventStreamListener;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
 import org.slf4j.Logger;

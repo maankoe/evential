@@ -1,6 +1,7 @@
 package maankoe.stream;
 
 import maankoe.function.EventFunction;
+import maankoe.stream.base.GeneralEventStream;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
 import maankoe.stream.submit.SubmitStrategy;

@@ -1,4 +1,4 @@
-package maankoe.stream;
+package maankoe.stream.base;
 
 
 import maankoe.function.EventFunction;
