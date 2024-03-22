@@ -1,5 +1,6 @@
 package maankoe.stream.base;
 
+import maankoe.function.DistinctFilter;
 import maankoe.function.ErrorFunction;
 import maankoe.loop.EventLoop;
 import maankoe.stream.*;
@@ -62,6 +63,14 @@ public abstract class BaseEventStream<O> {
                 this.loop,
                 new ErrorFunction.ErrorMapper<>(mapping),
                 "ERROR_MAP"
+        );
+        this.listener = ret;
+        return ret;
+    }
+
+    public <K> BaseEventStream<O> distinct(Function<O, K> key) {
+        DistinctEventStream<O, K> ret = new DistinctEventStream<O, K>(
+                this.loop, new DistinctFilter<>(key)
         );
         this.listener = ret;
         return ret;
