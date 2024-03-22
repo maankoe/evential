@@ -1,4 +1,4 @@
-package maankoe.stream;
+package maankoe.function;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -17,9 +17,11 @@ public interface EventFunction<I, O> {
 
     class Consumer<I> implements EventFunction<I, I> {
         private final java.util.function.Consumer<I> consumer;
+
         public Consumer(java.util.function.Consumer<I> consumer) {
             this.consumer = consumer;
         }
+
         @Override
         public Optional<I> apply(I item) {
             this.consumer.accept(item);

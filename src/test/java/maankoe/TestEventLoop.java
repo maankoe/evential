@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -27,11 +28,59 @@ public class TestEventLoop {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         SideEffectConsumer<Integer> consumer = new SideEffectConsumer<>();
+        SideEffectConsumer<Throwable> errorConsumer = new SideEffectConsumer<>();
         int value = 1;
         loop.submit(() -> value)
                 .onSuccess(consumer);
         waitForCompletion(loop);
         assertThat(consumer.items).containsExactly(value);
+        assertThat(errorConsumer.items).isEmpty();
+    }
+
+    @Test
+    public void testLoopSubmitAndError() {
+        EventLoop loop = new EventLoop();
+        Executors.newSingleThreadExecutor().submit(loop::run);
+        SideEffectConsumer<Integer> consumer = new SideEffectConsumer<>();
+        SideEffectConsumer<Throwable> errorConsumer = new SideEffectConsumer<>();
+        IllegalStateException error = new IllegalStateException("ERROR");
+        Callable<Integer> throwError = () -> { throw error; };
+        loop.submit(throwError)
+                .onSuccess(consumer)
+                .onError(errorConsumer);
+        waitForCompletion(loop);
+        assertThat(consumer.items).isEmpty();
+        assertThat(errorConsumer.items).containsExactly(error);
+    }
+
+    @Test
+    public void testLoopSubmitAndCompleteLateStart() {
+        EventLoop loop = new EventLoop();
+        SideEffectConsumer<Integer> consumer = new SideEffectConsumer<>();
+        SideEffectConsumer<Throwable> errorConsumer = new SideEffectConsumer<>();
+        int value = 1;
+        loop.submit(() -> value)
+                .onSuccess(consumer);
+        Executors.newSingleThreadExecutor().submit(loop::run);
+        waitForCompletion(loop);
+        assertThat(consumer.items).containsExactly(value);
+        assertThat(errorConsumer.items).isEmpty();
+    }
+
+    @Test
+    public void testLoopSubmitAndErrorLateStart() {
+        EventLoop loop = new EventLoop();
+        SideEffectConsumer<Integer> consumer = new SideEffectConsumer<>();
+        SideEffectConsumer<Throwable> errorConsumer = new SideEffectConsumer<>();
+        IllegalStateException error = new IllegalStateException("ERROR");
+        Callable<Integer> throwError = () -> { throw error; };
+        loop.submit(throwError)
+                .onSuccess(consumer)
+                .onError(errorConsumer);
+        Executors.newSingleThreadExecutor().submit(loop::run);
+        waitForCompletion(loop);
+        assertThat(consumer.items).isEmpty();
+        assertThat(errorConsumer.items).containsExactly(error);
     }
 
     @Test
@@ -55,7 +104,7 @@ public class TestEventLoop {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         SideEffectConsumer<Integer> consumer = new SideEffectConsumer<>();
-        SideEffectConsumer<Exception> errorConsumer = new SideEffectConsumer<>();
+        SideEffectConsumer<Throwable> errorConsumer = new SideEffectConsumer<>();
         int value = 3;
         int multiplier = 2;
         loop.submit(() -> value)

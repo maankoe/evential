@@ -1,5 +1,6 @@
 package maankoe.stream;
 
+import maankoe.function.EventFunction;
 import maankoe.loop.EventLoop;
 
 import java.util.function.Predicate;

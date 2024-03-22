@@ -1,5 +1,6 @@
 package maankoe.stream;
 
+import maankoe.function.ErrorFunction;
 import maankoe.loop.EventLoop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,14 +10,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 
-/**
- * sorted, distinct
- * take, skip, takeWhile, skipWhile
- * reduce, aggregate,
- * anyMatch, allMatch, nonMatch
- * concat?
- * @param <O>
- */
 public abstract class BaseEventStream<O> {
     private final static Logger LOGGER = LoggerFactory.getLogger(EventStream.class);
 
@@ -49,6 +42,26 @@ public abstract class BaseEventStream<O> {
 
     public ConsumedEventStream<O> consume(Consumer<O> consumer) {
         ConsumedEventStream<O> ret = new ConsumedEventStream<>(this.loop, consumer);
+        this.listener = ret;
+        return ret;
+    }
+
+    public ErrorEventStream<O> consumeError(Consumer<Throwable> consumer) {
+        ErrorEventStream<O> ret = new ErrorEventStream<>(
+                this.loop,
+                new ErrorFunction.ErrorConsumerBlackhole<>(consumer),
+                "ERROR_CONSUME"
+        );
+        this.listener = ret;
+        return ret;
+    }
+
+    public BaseEventStream<O> mapError(Function<Throwable, O> mapping) {
+        ErrorEventStream<O> ret = new ErrorEventStream<>(
+                this.loop,
+                new ErrorFunction.ErrorMapper<>(mapping),
+                "ERROR_MAP"
+        );
         this.listener = ret;
         return ret;
     }

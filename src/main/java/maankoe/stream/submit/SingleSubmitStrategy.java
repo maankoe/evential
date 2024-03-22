@@ -1,18 +1,21 @@
 package maankoe.stream.submit;
 
+import maankoe.function.ErrorFunction;
 import maankoe.loop.Event;
 import maankoe.loop.EventLoop;
-import maankoe.stream.EventFunction;
+import maankoe.function.EventFunction;
 import maankoe.stream.EventStreamListener;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
 import maankoe.utilities.IndexGenerator;
+import maankoe.utilities.Result;
 
 import java.util.Optional;
 
 public class SingleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
     private final EventLoop loop;
     private final EventFunction<I, O> function;
+    private final ErrorFunction<O> errorFunction;
     private final IndexGenerator indexGenerator;
     private final ListenerBlockingStrategy listenerBlockingStrategy;
     private final EventBlockingStrategy eventBlockingStrategy;
@@ -20,11 +23,13 @@ public class SingleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
     public SingleSubmitStrategy(
             EventLoop loop,
             EventFunction<I, O> function,
+            ErrorFunction<O> errorFunction,
             ListenerBlockingStrategy listenerBlockingStrategy,
             EventBlockingStrategy eventBlockingStrategy
     ) {
         this.loop = loop;
         this.function = function;
+        this.errorFunction = errorFunction;
         this.listenerBlockingStrategy = listenerBlockingStrategy;
         this.eventBlockingStrategy = eventBlockingStrategy;
         this.indexGenerator = new IndexGenerator();
@@ -44,7 +49,25 @@ public class SingleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
         long submitIndex = this.indexGenerator.next();
         listener.expect(submitIndex);
         event.onSuccess(ox -> ox.ifPresent(listener::submit));
-        event.onComplete(ox -> listener.accept(submitIndex));
+        event.onError(listener::submitError);
+        event.onComplete(orx -> listener.accept(submitIndex));
+    }
+
+    @Override
+    public void submitError(
+            Throwable error,
+            EventStreamListener<O> listener
+    ) {
+        Event<Optional<Result<O>>> event = loop.submit(() -> this.errorFunction.apply(error));
+        this.eventBlockingStrategy.submit(event);
+        long submitIndex = this.indexGenerator.next();
+        listener.expect(submitIndex);
+        event.onSuccess(orx -> orx.ifPresent(rx -> rx
+                .ifSuccess(listener::submit)
+                .ifError(listener::submitError)
+        ));
+        event.onError(listener::submitError);
+        event.onComplete(orx -> listener.accept(submitIndex));
     }
 
     @Override

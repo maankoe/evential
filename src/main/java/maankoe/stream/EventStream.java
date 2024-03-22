@@ -1,6 +1,7 @@
 package maankoe.stream;
 
 
+import maankoe.function.EventFunction;
 import maankoe.loop.EventLoop;
 
 public class EventStream<O> extends GeneralEventStream<O, O> {
