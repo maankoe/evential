@@ -2,8 +2,12 @@ package maankoe.stream.base;
 
 import maankoe.function.DistinctFilter;
 import maankoe.function.ErrorFunction;
+import maankoe.function.EventFunction;
 import maankoe.loop.EventLoop;
 import maankoe.stream.*;
+import maankoe.stream.blocking.EventBlockingStrategy;
+import maankoe.stream.blocking.ListenerBlockingStrategy;
+import maankoe.stream.reduce.WindowedEventStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,6 +75,26 @@ public abstract class BaseEventStream<O> {
     public <K> BaseEventStream<O> distinct(Function<O, K> key) {
         DistinctEventStream<O, K> ret = new DistinctEventStream<O, K>(
                 this.loop, new DistinctFilter<>(key)
+        );
+        this.listener = ret;
+        return ret;
+    }
+
+//    public <I> Reduction<I, O> reduce(BiFunction<I, O, O> reduction, O identity) {
+//        Reduction<I, O> ret = new Reduction<>(
+//                this.loop, reduction, identity
+//        );
+//        this.listener = ret;
+//        return ret;
+//    }
+
+    public BaseEventStream<Iterable<O>> window(int windowSize) {
+        WindowedEventStream<O> ret = new WindowedEventStream<O>(
+                this.loop,
+                windowSize,
+                new ErrorFunction.Identity<>(),
+                new ListenerBlockingStrategy("WINDOW"),
+                new EventBlockingStrategy("WINDOW")
         );
         this.listener = ret;
         return ret;

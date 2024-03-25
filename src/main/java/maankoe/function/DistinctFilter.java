@@ -8,6 +8,8 @@ import java.util.function.Function;
 
 public class DistinctFilter<I, K> implements EventFunction<I, I> {
 
+    private final static Object DUMMY = new Object();
+
     private final Function<I, K> key;
     private final ConcurrentHashMap<K, Object> observed;
 
@@ -18,7 +20,7 @@ public class DistinctFilter<I, K> implements EventFunction<I, I> {
 
     @Override
     public Optional<I> apply(I item) {
-        if (Objects.isNull(this.observed.putIfAbsent(this.key.apply(item), new Object()))) {
+        if (Objects.isNull(this.observed.putIfAbsent(this.key.apply(item), DUMMY))) {
             return Optional.of(item);
         } else {
             return Optional.empty();

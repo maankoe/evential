@@ -2,6 +2,7 @@ package maankoe.utilities;
 
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class Optional<T> {
     private final T value;
@@ -24,9 +25,17 @@ public class Optional<T> {
         return new Optional<>(value, Objects.isNull(value));
     }
 
-    public void ifPresent(Consumer<? super T> action) {
+    public void ifPresent(Consumer<T> action) {
         if (this.isPresent) {
             action.accept(value);
+        }
+    }
+
+    public Optional<T> filter(Predicate<T> predicate) {
+        if (predicate.test(value)) {
+            return this;
+        } else {
+            return Optional.empty();
         }
     }
 }
