@@ -1,23 +1,20 @@
 package maankoe.stream.submit;
 
 import maankoe.function.ErrorFunction;
-import maankoe.loop.Event;
 import maankoe.loop.EventLoop;
 import maankoe.function.EventFunction;
 import maankoe.stream.base.EventStreamListener;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
 import maankoe.utilities.IndexGenerator;
-import maankoe.utilities.Optional;
-import maankoe.utilities.Result;
+
 
 public class SingleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
-    private final EventLoop loop;
-    private final EventFunction<I, O> function;
-    private final ErrorFunction<O> errorFunction;
     private final IndexGenerator indexGenerator;
     private final ListenerBlockingStrategy listenerBlockingStrategy;
     private final EventBlockingStrategy eventBlockingStrategy;
+    private final SingleEventSubmitStrategy<I, O> eventSubmitStrategy;
+    private final ErrorSubmitStrategy<O> errorSubmitStrategy;
 
     public SingleSubmitStrategy(
             EventLoop loop,
@@ -26,12 +23,15 @@ public class SingleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
             ListenerBlockingStrategy listenerBlockingStrategy,
             EventBlockingStrategy eventBlockingStrategy
     ) {
-        this.loop = loop;
-        this.function = function;
-        this.errorFunction = errorFunction;
         this.listenerBlockingStrategy = listenerBlockingStrategy;
         this.eventBlockingStrategy = eventBlockingStrategy;
         this.indexGenerator = new IndexGenerator();
+        this.eventSubmitStrategy = new SingleEventSubmitStrategy<>(
+                loop, function, indexGenerator, eventBlockingStrategy
+        );
+        this.errorSubmitStrategy = new SingleErrorSubmitStrategy<>(
+                loop, errorFunction, indexGenerator, eventBlockingStrategy
+        );
     }
 
     @Override
@@ -43,13 +43,7 @@ public class SingleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
             I item,
             EventStreamListener<O> listener
     ) {
-        Event<Optional<O>> event = loop.submit(() -> this.function.apply(item));
-        this.eventBlockingStrategy.submit(event);
-        long submitIndex = this.indexGenerator.next();
-        listener.expect(submitIndex);
-        event.onSuccess(ox -> ox.ifPresent(listener::submit));
-        event.onError(listener::submitError);
-        event.onComplete(orx -> listener.accept(submitIndex));
+        this.eventSubmitStrategy.submit(item, listener);
     }
 
     @Override
@@ -57,16 +51,7 @@ public class SingleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
             Throwable error,
             EventStreamListener<O> listener
     ) {
-        Event<Optional<Result<O>>> event = loop.submit(() -> this.errorFunction.apply(error));
-        this.eventBlockingStrategy.submit(event);
-        long submitIndex = this.indexGenerator.next();
-        listener.expect(submitIndex);
-        event.onSuccess(orx -> orx.ifPresent(rx -> rx
-                .ifSuccess(listener::submit)
-                .ifError(listener::submitError)
-        ));
-        event.onError(listener::submitError);
-        event.onComplete(orx -> listener.accept(submitIndex));
+        this.errorSubmitStrategy.submit(error, listener);
     }
 
     @Override

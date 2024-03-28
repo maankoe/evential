@@ -100,6 +100,7 @@ public class WindowedEventStream<O>
 
     @Override
     public void close(long index) {
+        LOGGER.info("{}: Closing stream at index {}", this.name, index);
         this.listenerBlockingStrategy.close(index);
         this.listenerBlockingStrategy.block();
         this.current.get().get()
