@@ -7,6 +7,8 @@ import maankoe.stream.base.BaseEventStream;
 import maankoe.stream.base.EventStreamListener;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
+import maankoe.stream.submit.ErrorSubmitStrategy;
+import maankoe.stream.submit.SingleErrorSubmitStrategy;
 import maankoe.utilities.IndexGenerator;
 import maankoe.utilities.Optional;
 import maankoe.utilities.Result;
@@ -24,13 +26,14 @@ public class WindowedEventStream<O>
     private final static Logger LOGGER = LoggerFactory.getLogger(WindowedEventStream.class);
 
     private final EventLoop loop;
-    private final ErrorFunction<Iterable<O>> errorFunction;
     private final IndexGenerator indexGenerator;
     private final ListenerBlockingStrategy listenerBlockingStrategy;
     private final EventBlockingStrategy eventBlockingStrategy;
     private final String name = "WINDOW";
+    private final ErrorSubmitStrategy<Iterable<O>> errorSubmitStrategy;
 
-    private AtomicReference<LimitedCollection<O>> current;
+
+    private final AtomicReference<LimitedCollection<O>> current;
     private final int windowSize;
 
     public WindowedEventStream(
@@ -43,11 +46,13 @@ public class WindowedEventStream<O>
         super(loop);
         this.loop = loop;
         this.windowSize = windowSize;
-        this.errorFunction = errorFunction;
         this.listenerBlockingStrategy = listenerBlockingStrategy;
         this.eventBlockingStrategy = eventBlockingStrategy;
         this.indexGenerator = new IndexGenerator();
         this.current = new AtomicReference<>(new LimitedCollection<>(windowSize));
+        this.errorSubmitStrategy = new SingleErrorSubmitStrategy<>(
+                loop, errorFunction, indexGenerator, eventBlockingStrategy
+        );
     }
 
     @Override
@@ -79,18 +84,7 @@ public class WindowedEventStream<O>
     @Override
     public void submitError(Throwable error) {
         LOGGER.error("{}: Error {}", this.name, error);
-        Event<Optional<Result<Iterable<O>>>> event = loop.submit(
-                () -> this.errorFunction.apply(error)
-        );
-        this.eventBlockingStrategy.submit(event);
-        long submitIndex = this.indexGenerator.next();
-        listener.expect(submitIndex);
-        event.onSuccess(orx -> orx.ifPresent(rx -> rx
-                .ifSuccess(listener::submit)
-                .ifError(listener::submitError)
-        ));
-        event.onError(listener::submitError);
-        event.onComplete(orx -> listener.accept(submitIndex));
+        this.errorSubmitStrategy.submit(error, this.listener);
     }
 
     @Override

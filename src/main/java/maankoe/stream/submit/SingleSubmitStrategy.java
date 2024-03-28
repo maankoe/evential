@@ -39,18 +39,12 @@ public class SingleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
         this.listenerBlockingStrategy.expect(index);
     }
 
-    public void submit(
-            I item,
-            EventStreamListener<O> listener
-    ) {
+    public void submit(I item, EventStreamListener<O> listener) {
         this.eventSubmitStrategy.submit(item, listener);
     }
 
     @Override
-    public void submitError(
-            Throwable error,
-            EventStreamListener<O> listener
-    ) {
+    public void submitError(Throwable error, EventStreamListener<O> listener) {
         this.errorSubmitStrategy.submit(error, listener);
     }
 

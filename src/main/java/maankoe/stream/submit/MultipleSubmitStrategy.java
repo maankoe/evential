@@ -39,10 +39,7 @@ class MultipleSubmitStrategy<I, O> implements SubmitStrategy<I, O> {
         this.listenerBlockingStrategy.expect(index);
     }
 
-    public void submit(
-            I item,
-            EventStreamListener<O> listener
-    ) {
+    public void submit(I item, EventStreamListener<O> listener) {
         this.eventSubmitStrategy.submit(item, listener);
     }
 

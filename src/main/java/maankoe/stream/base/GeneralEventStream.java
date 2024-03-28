@@ -1,9 +1,11 @@
 package maankoe.stream.base;
 
 
+import maankoe.function.ErrorFunction;
 import maankoe.function.EventFunction;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
+import maankoe.stream.reduce.WindowedEventStream;
 import maankoe.stream.submit.SubmitStrategy;
 import maankoe.loop.EventLoop;
 import org.slf4j.Logger;

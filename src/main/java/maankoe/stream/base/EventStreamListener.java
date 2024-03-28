@@ -4,7 +4,7 @@ package maankoe.stream.base;
 public interface EventStreamListener<T> {
     void expect(long index);
     void submit(T item);
-    void submitError(Throwable throwable);
+    void submitError(Throwable error);
     void accept(long index);
     void close(long index);
 
@@ -20,7 +20,7 @@ public interface EventStreamListener<T> {
         }
 
         @Override
-        public void submitError(Throwable throwable) {
+        public void submitError(Throwable error) {
             // do nothing
         }
 

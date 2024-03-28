@@ -22,59 +22,75 @@ public abstract class BaseEventStream<O> {
     protected EventStreamListener<O> listener = new EventStreamListener.Dummy<>();
     protected EventLoop loop;
 
-    public BaseEventStream(
-            EventLoop loop
-    ) {
+    public BaseEventStream(EventLoop loop) {
          this.loop = loop;
     }
 
     public <OO> BaseEventStream<OO> map(Function<O, OO> mapper) {
-        MappedEventStream<O, OO> ret = new MappedEventStream<>(this.loop, mapper);
+        NewEventStream<O, OO> ret = NewEventStream.create(
+                this.loop,
+                new EventFunction.Mapper<>(mapper),
+                "MAP"
+        );
         this.listener = ret;
         return ret;
     }
 
     public <OO> BaseEventStream<OO> flatMap(Function<O, Iterable<OO>> mapper) {
-        FlatMappedEventStream<O, OO> ret = new FlatMappedEventStream<>(this.loop, mapper);
+        NewEventStream<O, OO> ret = NewEventStream.createMulti(
+                this.loop,
+                new EventFunction.Mapper<>(mapper),
+                "FLATMAP"
+        );
         this.listener = ret;
         return ret;
     }
 
     public BaseEventStream<O> filter(Predicate<O> predicate) {
-        FilteredEventStream<O> ret = new FilteredEventStream<>(this.loop, predicate);
+        NewEventStream<O, O> ret = NewEventStream.create(
+                this.loop,
+                new EventFunction.Filter<>(predicate),
+                "FILTER"
+        );
         this.listener = ret;
         return ret;
     }
 
     public BaseEventStream<O> consume(Consumer<O> consumer) {
-        ConsumedEventStream<O> ret = new ConsumedEventStream<>(this.loop, consumer);
+        NewEventStream<O, O> ret = NewEventStream.create(
+                this.loop,
+                new EventFunction.Consumer<>(consumer),
+                "CONSUME"
+        );
         this.listener = ret;
         return ret;
     }
 
     public BaseEventStream<O> consumeError(Consumer<Throwable> consumer) {
-        ErrorEventStream<O> ret = new ErrorEventStream<>(
+        NewEventStream<O, O> ret = NewEventStream.create(
                 this.loop,
                 new ErrorFunction.ErrorConsumerBlackhole<>(consumer),
-                "ERROR_CONSUME"
+                "CONSUME_ERROR"
         );
         this.listener = ret;
         return ret;
     }
 
     public BaseEventStream<O> mapError(Function<Throwable, O> mapping) {
-        ErrorEventStream<O> ret = new ErrorEventStream<>(
+        NewEventStream<O, O> ret = NewEventStream.create(
                 this.loop,
                 new ErrorFunction.ErrorMapper<>(mapping),
-                "ERROR_MAP"
+                "MAP_ERROR"
         );
         this.listener = ret;
         return ret;
     }
 
     public <K> BaseEventStream<O> distinct(Function<O, K> key) {
-        DistinctEventStream<O, K> ret = new DistinctEventStream<O, K>(
-                this.loop, new DistinctFilter<>(key)
+        NewEventStream<O, O> ret = NewEventStream.create(
+                this.loop,
+                new DistinctFilter<>(key),
+                "DISTINCT"
         );
         this.listener = ret;
         return ret;
@@ -89,12 +105,10 @@ public abstract class BaseEventStream<O> {
 //    }
 
     public BaseEventStream<Iterable<O>> window(int windowSize) {
-        WindowedEventStream<O> ret = new WindowedEventStream<O>(
+        NewEventStream<O, Iterable<O>> ret = NewEventStream.createWindowed(
                 this.loop,
                 windowSize,
-                new ErrorFunction.Identity<>(),
-                new ListenerBlockingStrategy("WINDOW"),
-                new EventBlockingStrategy("WINDOW")
+                "WINDOWED"
         );
         this.listener = ret;
         return ret;
