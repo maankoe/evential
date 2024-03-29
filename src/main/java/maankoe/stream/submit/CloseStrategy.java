@@ -1,5 +1,7 @@
 package maankoe.stream.submit;
 
+import maankoe.stream.base.EventStreamListener;
+
 public interface CloseStrategy {
-    void close(int index);
+    void close(long index, EventStreamListener<?> listener);
 }

@@ -33,25 +33,44 @@ public class WindowedEventStream<O>
     private final ErrorSubmitStrategy<Iterable<O>> errorSubmitStrategy;
 
 
-    private final AtomicReference<LimitedCollection<O>> current;
+    private AtomicReference<LimitedCollection<O>> current;
     private final int windowSize;
 
     public WindowedEventStream(
             EventLoop loop,
-            int windowSize,
-            ErrorFunction<Iterable<O>> errorFunction,
+            IndexGenerator indexGenerator,
             ListenerBlockingStrategy listenerBlockingStrategy,
-            EventBlockingStrategy eventBlockingStrategy
+            EventBlockingStrategy eventBlockingStrategy,
+            int windowSize,
+            ErrorSubmitStrategy<Iterable<O>> errorSubmitStrategy
     ) {
         super(loop);
         this.loop = loop;
         this.windowSize = windowSize;
         this.listenerBlockingStrategy = listenerBlockingStrategy;
         this.eventBlockingStrategy = eventBlockingStrategy;
-        this.indexGenerator = new IndexGenerator();
+        this.indexGenerator = indexGenerator;
         this.current = new AtomicReference<>(new LimitedCollection<>(windowSize));
-        this.errorSubmitStrategy = new SingleErrorSubmitStrategy<>(
-                loop, errorFunction, indexGenerator, eventBlockingStrategy
+        this.errorSubmitStrategy = errorSubmitStrategy;
+    }
+
+    public static <O> WindowedEventStream<O> create(
+            EventLoop loop,
+            int windowSize,
+            String name
+    ) {
+        IndexGenerator indexGenerator = new IndexGenerator();
+        ListenerBlockingStrategy listenerBlockingStrategy = new ListenerBlockingStrategy(name);
+        EventBlockingStrategy eventBlockingStrategy = new EventBlockingStrategy(name);
+        return new WindowedEventStream<>(
+                loop,
+                indexGenerator,
+                listenerBlockingStrategy,
+                eventBlockingStrategy,
+                windowSize,
+                new SingleErrorSubmitStrategy<>(
+                        loop, new ErrorFunction.Identity<>(), indexGenerator, eventBlockingStrategy
+                )
         );
     }
 
@@ -83,7 +102,6 @@ public class WindowedEventStream<O>
 
     @Override
     public void submitError(Throwable error) {
-        LOGGER.error("{}: Error {}", this.name, error);
         this.errorSubmitStrategy.submit(error, this.listener);
     }
 

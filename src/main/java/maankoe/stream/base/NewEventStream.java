@@ -5,6 +5,7 @@ import maankoe.function.EventFunction;
 import maankoe.loop.EventLoop;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
+import maankoe.stream.reduce.WindowedEventStream;
 import maankoe.stream.submit.*;
 import maankoe.utilities.IndexGenerator;
 
@@ -17,6 +18,7 @@ public class NewEventStream<I, O>
     private final EventBlockingStrategy eventBlockingStrategy;
     private final EventSubmitStrategy<I, O> eventSubmitStrategy;
     private final ErrorSubmitStrategy<O> errorSubmitStrategy;
+    private final CloseStrategy closeStrategy;
 
     public NewEventStream(
             EventLoop loop,
@@ -24,7 +26,8 @@ public class NewEventStream<I, O>
             ListenerBlockingStrategy listenerBlockingStrategy,
             EventBlockingStrategy eventBlockingStrategy,
             EventSubmitStrategy<I, O> eventSubmitStrategy,
-            ErrorSubmitStrategy<O> errorSubmitStrategy
+            ErrorSubmitStrategy<O> errorSubmitStrategy,
+            CloseStrategy closeStrategy
     ) {
         super(loop);
         this.indexGenerator = indexGenerator;
@@ -32,6 +35,7 @@ public class NewEventStream<I, O>
         this.eventBlockingStrategy = eventBlockingStrategy;
         this.eventSubmitStrategy = eventSubmitStrategy;
         this.errorSubmitStrategy = errorSubmitStrategy;
+        this.closeStrategy = closeStrategy;
     }
 
     public static <I, O> NewEventStream<I, O> create(
@@ -54,7 +58,7 @@ public class NewEventStream<I, O>
                         loop, new ErrorFunction.Identity<>(), indexGenerator, eventBlockingStrategy
                 ),
                 new SimpleCloseStrategy(
-                        indexGenerator, listenerBlockingStrategy, eventBlockingStrategy, NEED LISTENER HERE FROM BASE
+                        indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
                 )
         );
     }
@@ -77,6 +81,9 @@ public class NewEventStream<I, O>
                 ),
                 new SingleErrorSubmitStrategy<>(
                         loop, errorFunction, indexGenerator, eventBlockingStrategy
+                ),
+                new SimpleCloseStrategy(
+                        indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
                 )
         );
     }
@@ -99,28 +106,9 @@ public class NewEventStream<I, O>
                 ),
                 new MultipleErrorSubmitStrategy<>(
                         loop, new ErrorFunction.Identity<>(), indexGenerator, eventBlockingStrategy
-                )
-        );
-    }
-
-    public static <O> NewEventStream<O, Iterable<O>> createWindowed(
-            EventLoop loop,
-            int windowSize,
-            String name
-    ) {
-        IndexGenerator indexGenerator = new IndexGenerator();
-        ListenerBlockingStrategy listenerBlockingStrategy = new ListenerBlockingStrategy(name);
-        EventBlockingStrategy eventBlockingStrategy = new EventBlockingStrategy(name);
-        return new NewEventStream<>(
-                loop,
-                indexGenerator,
-                listenerBlockingStrategy,
-                eventBlockingStrategy,
-                new WindowedEventSubmitStrategy<>(
-                        loop, windowSize, indexGenerator, eventBlockingStrategy
                 ),
-                new SingleErrorSubmitStrategy<>(
-                        loop, new ErrorFunction.Identity<>(), indexGenerator, eventBlockingStrategy
+                new SimpleCloseStrategy(
+                        indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
                 )
         );
     }
@@ -147,9 +135,6 @@ public class NewEventStream<I, O>
 
     @Override
     public void close(long index) {
-        this.listenerBlockingStrategy.close(index);
-        this.listenerBlockingStrategy.block();
-        this.eventBlockingStrategy.block();
-        this.listener.close(this.indexGenerator.current());
+        this.closeStrategy.close(index, this.listener);
     }
 }

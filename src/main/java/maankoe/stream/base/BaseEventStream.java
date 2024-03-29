@@ -105,7 +105,7 @@ public abstract class BaseEventStream<O> {
 //    }
 
     public BaseEventStream<Iterable<O>> window(int windowSize) {
-        NewEventStream<O, Iterable<O>> ret = NewEventStream.createWindowed(
+        WindowedEventStream<O> ret = WindowedEventStream.create(
                 this.loop,
                 windowSize,
                 "WINDOWED"
