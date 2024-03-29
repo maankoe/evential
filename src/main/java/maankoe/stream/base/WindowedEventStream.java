@@ -1,17 +1,14 @@
-package maankoe.stream.reduce;
+package maankoe.stream.base;
 
 import maankoe.function.ErrorFunction;
 import maankoe.loop.Event;
 import maankoe.loop.EventLoop;
-import maankoe.stream.base.BaseEventStream;
-import maankoe.stream.base.EventStreamListener;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
+import maankoe.utilities.LimitedCollection;
 import maankoe.stream.submit.ErrorSubmitStrategy;
 import maankoe.stream.submit.SingleErrorSubmitStrategy;
 import maankoe.utilities.IndexGenerator;
-import maankoe.utilities.Optional;
-import maankoe.utilities.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,23 +1,18 @@
 package maankoe;
 
 import maankoe.loop.EventLoop;
-import maankoe.stream.ConsumedEventStream;
-import maankoe.stream.EventStream;
+import maankoe.stream.base.EventStream;
 import maankoe.stream.base.BaseEventStream;
-import net.bytebuddy.implementation.bytecode.Throw;
-import org.assertj.core.util.Streams;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,7 +26,7 @@ public class TestEventStreamErrors {
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         Collection<Throwable> errors = new ConcurrentLinkedQueue<>();
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         BaseEventStream<Integer> outStream = stream
                 .consume(results::add)
                 .consumeError(errors::add)
@@ -57,7 +52,7 @@ public class TestEventStreamErrors {
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         Collection<String> errors = new ConcurrentLinkedQueue<>();
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         Function<Integer, String> errorGenerator =
                 x -> String.format("ERROR: %d", x);
         Function<Integer, Integer> mapping = x -> {
@@ -86,7 +81,7 @@ public class TestEventStreamErrors {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         Function<Throwable, Integer> mapping = x -> Integer.parseInt(x.getMessage());
         BaseEventStream<Integer> outStream = stream
                 .mapError(mapping)
@@ -111,7 +106,7 @@ public class TestEventStreamErrors {
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
         Collection<Throwable> errors = new ConcurrentLinkedQueue<>();
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         BaseEventStream<Integer> outStream = stream
                 .consumeError(errors::add)
                 .consume(results::add);

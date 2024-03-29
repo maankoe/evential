@@ -1,79 +1,139 @@
 package maankoe.stream.base;
 
-
 import maankoe.function.ErrorFunction;
 import maankoe.function.EventFunction;
+import maankoe.loop.EventLoop;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
-import maankoe.stream.reduce.WindowedEventStream;
-import maankoe.stream.submit.SubmitStrategy;
-import maankoe.loop.EventLoop;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import maankoe.stream.submit.*;
+import maankoe.utilities.IndexGenerator;
 
 public class GeneralEventStream<I, O>
         extends BaseEventStream<O>
-        implements EventStreamListener<I> {
+        implements EventStreamListener<I>  {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(GeneralEventStream.class);
-
-    private final SubmitStrategy<I, O> submitStrategy;
-    private final String name;
+    private final IndexGenerator indexGenerator;
+    private final ListenerBlockingStrategy listenerBlockingStrategy;
+    private final EventBlockingStrategy eventBlockingStrategy;
+    private final EventSubmitStrategy<I, O> eventSubmitStrategy;
+    private final ErrorSubmitStrategy<O> errorSubmitStrategy;
+    private final CloseStrategy closeStrategy;
 
     public GeneralEventStream(
+            EventLoop loop,
+            IndexGenerator indexGenerator,
+            ListenerBlockingStrategy listenerBlockingStrategy,
+            EventBlockingStrategy eventBlockingStrategy,
+            EventSubmitStrategy<I, O> eventSubmitStrategy,
+            ErrorSubmitStrategy<O> errorSubmitStrategy,
+            CloseStrategy closeStrategy
+    ) {
+        super(loop);
+        this.indexGenerator = indexGenerator;
+        this.listenerBlockingStrategy = listenerBlockingStrategy;
+        this.eventBlockingStrategy = eventBlockingStrategy;
+        this.eventSubmitStrategy = eventSubmitStrategy;
+        this.errorSubmitStrategy = errorSubmitStrategy;
+        this.closeStrategy = closeStrategy;
+    }
+
+    public static <I, O> GeneralEventStream<I, O> create(
             EventLoop loop,
             EventFunction<I, O> function,
             String name
     ) {
-        this(
+        IndexGenerator indexGenerator = new IndexGenerator();
+        ListenerBlockingStrategy listenerBlockingStrategy = new ListenerBlockingStrategy(name);
+        EventBlockingStrategy eventBlockingStrategy = new EventBlockingStrategy(name);
+        return new GeneralEventStream<>(
                 loop,
-                SubmitStrategy.single(
-                    loop,
-                    function,
-                    new ListenerBlockingStrategy(name),
-                    new EventBlockingStrategy(name)
+                indexGenerator,
+                listenerBlockingStrategy,
+                eventBlockingStrategy,
+                new SingleEventSubmitStrategy<>(
+                        loop, function, indexGenerator, eventBlockingStrategy
                 ),
-                name
+                new SingleErrorSubmitStrategy<>(
+                        loop, new ErrorFunction.Identity<>(), indexGenerator, eventBlockingStrategy
+                ),
+                new SimpleCloseStrategy(
+                        indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
+                )
         );
     }
 
-    public GeneralEventStream(
+    public static <O> GeneralEventStream<O, O> create(
             EventLoop loop,
-            SubmitStrategy<I, O> submitStrategy,
+            ErrorFunction<O> errorFunction,
             String name
     ) {
-        super(loop);
-        this.submitStrategy = submitStrategy;
-        this.name = name;
+        IndexGenerator indexGenerator = new IndexGenerator();
+        ListenerBlockingStrategy listenerBlockingStrategy = new ListenerBlockingStrategy(name);
+        EventBlockingStrategy eventBlockingStrategy = new EventBlockingStrategy(name);
+        return new GeneralEventStream<>(
+                loop,
+                indexGenerator,
+                listenerBlockingStrategy,
+                eventBlockingStrategy,
+                new SingleEventSubmitStrategy<>(
+                        loop, new EventFunction.Identity<>(), indexGenerator, eventBlockingStrategy
+                ),
+                new SingleErrorSubmitStrategy<>(
+                        loop, errorFunction, indexGenerator, eventBlockingStrategy
+                ),
+                new SimpleCloseStrategy(
+                        indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
+                )
+        );
+    }
+
+    public static <I, O> GeneralEventStream<I, O> createMulti(
+            EventLoop loop,
+            EventFunction<I, Iterable<O>> function,
+            String name
+    ) {
+        IndexGenerator indexGenerator = new IndexGenerator();
+        ListenerBlockingStrategy listenerBlockingStrategy = new ListenerBlockingStrategy(name);
+        EventBlockingStrategy eventBlockingStrategy = new EventBlockingStrategy(name);
+        return new GeneralEventStream<>(
+                loop,
+                indexGenerator,
+                listenerBlockingStrategy,
+                eventBlockingStrategy,
+                new MultipleEventSubmitStrategy<>(
+                        loop, function, indexGenerator, eventBlockingStrategy
+                ),
+                new MultipleErrorSubmitStrategy<>(
+                        loop, new ErrorFunction.Identity<>(), indexGenerator, eventBlockingStrategy
+                ),
+                new SimpleCloseStrategy(
+                        indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
+                )
+        );
     }
 
     @Override
     public void expect(long index) {
-        LOGGER.debug("{}: Expect {}", this.name, index);
-        this.submitStrategy.expect(index);
+        this.listenerBlockingStrategy.expect(index);
     }
 
     @Override
     public void submit(I item) {
-        LOGGER.debug("{}: Submit {}", this.name, item);
-        this.submitStrategy.submit(item, this.listener);
+        this.eventSubmitStrategy.submit(item, listener);
     }
 
     @Override
     public void submitError(Throwable error) {
-        LOGGER.debug("{}: Error {}", this.name, error);
-        this.submitStrategy.submitError(error, this.listener);
+        this.errorSubmitStrategy.submit(error, this.listener);
     }
 
     @Override
     public void accept(long index) {
-        LOGGER.debug("{}: Accept {}", this.name, index);
-        this.submitStrategy.accept(index);
+        this.listenerBlockingStrategy.accept(index);
     }
 
     @Override
     public void close(long index) {
-        LOGGER.info("{}: Closing stream at index {}", this.name, index);
-        this.submitStrategy.close(index, this.listener);
+        this.closeStrategy.close(index, this.listener);
     }
 }

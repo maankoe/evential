@@ -1,8 +1,7 @@
 package maankoe;
 
 import maankoe.loop.EventLoop;
-import maankoe.stream.ConsumedEventStream;
-import maankoe.stream.EventStream;
+import maankoe.stream.base.EventStream;
 import maankoe.stream.base.BaseEventStream;
 import org.assertj.core.util.Streams;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,7 @@ public class TestEventStream {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         BaseEventStream<Integer> outStream = stream
                 .consume(results::add);
         List<Integer> expected = new ArrayList<>();
@@ -51,7 +50,7 @@ public class TestEventStream {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         BaseEventStream<Integer> outStream = stream
                 .consume(x -> {
                     sleep(10);
@@ -77,7 +76,7 @@ public class TestEventStream {
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> resultsA = new ConcurrentLinkedQueue<>();
         Collection<Integer> resultsB = new ConcurrentLinkedQueue<>();
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         BaseEventStream<Integer> outStream = stream
                 .consume(resultsA::add)
                 .consume(resultsB::add);
@@ -99,7 +98,7 @@ public class TestEventStream {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         Function<Integer, Integer> mapper = x -> x*3;
         BaseEventStream<Integer> outStream = stream
                 .map(mapper)
@@ -121,7 +120,7 @@ public class TestEventStream {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<String> results = new ConcurrentLinkedQueue<>();
-        EventStream<String> stream = new EventStream<>(loop);
+        EventStream<String> stream = EventStream.create(loop);
         Function<String, Iterable<String>> mapper =
                 x -> Arrays.stream(x.split(" ")).toList();
         BaseEventStream<String> outStream = stream
@@ -145,7 +144,7 @@ public class TestEventStream {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         Predicate<Integer> predicate = x -> x%2==0;
         BaseEventStream<Integer> outStream = stream
                 .filter(predicate)
@@ -167,7 +166,7 @@ public class TestEventStream {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         Collection<Integer> results = new ConcurrentLinkedQueue<>();
-        EventStream<String> stream = new EventStream<>(loop);
+        EventStream<String> stream = EventStream.create(loop);
         Function<String, Iterable<String>> splitMapper = x -> Arrays.stream(x.split(" ")).toList();
         Function<String, Integer> parseIntMapper = Integer::parseInt;
         Function<Integer, Integer> multiplyMapper = x -> x * 5;

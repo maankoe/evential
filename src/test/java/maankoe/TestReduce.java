@@ -1,7 +1,7 @@
 package maankoe;
 
 import maankoe.loop.EventLoop;
-import maankoe.stream.EventStream;
+import maankoe.stream.base.EventStream;
 import maankoe.stream.base.BaseEventStream;
 import org.assertj.core.util.Streams;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,7 +24,7 @@ public class TestReduce {
     public void testWindow() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         Collection<Iterable<Integer>> results = new ConcurrentLinkedQueue<>();
         int windowSize = 5;
         BaseEventStream<Iterable<Integer>> outStream = stream
@@ -56,7 +55,7 @@ public class TestReduce {
     public void testWindowNoSleep() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         Collection<Iterable<Integer>> results = new ConcurrentLinkedQueue<>();
         int windowSize = 5;
         BaseEventStream<Iterable<Integer>> outStream = stream
@@ -82,7 +81,7 @@ public class TestReduce {
     public void testWindowOddSizes() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
-        EventStream<Integer> stream = new EventStream<>(loop);
+        EventStream<Integer> stream = EventStream.create(loop);
         Collection<Iterable<Integer>> results = new ConcurrentLinkedQueue<>();
         int windowSize = 7;
         BaseEventStream<Iterable<Integer>> outStream = stream
@@ -108,7 +107,7 @@ public class TestReduce {
 //    public void testReduce() {
 //        EventLoop loop = new EventLoop();
 //        Executors.newSingleThreadExecutor().submit(loop::run);
-//        EventStream<Integer> stream = new EventStream<>(loop);
+//        EventStream<Integer> stream = EventStream.create(loop);
 //        Reduction<Integer, Integer> result = stream
 //                .reduce(Integer::sum, 0);
 //        int expected = 0;

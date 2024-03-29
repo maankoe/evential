@@ -4,10 +4,6 @@ import maankoe.function.DistinctFilter;
 import maankoe.function.ErrorFunction;
 import maankoe.function.EventFunction;
 import maankoe.loop.EventLoop;
-import maankoe.stream.*;
-import maankoe.stream.blocking.EventBlockingStrategy;
-import maankoe.stream.blocking.ListenerBlockingStrategy;
-import maankoe.stream.reduce.WindowedEventStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +23,7 @@ public abstract class BaseEventStream<O> {
     }
 
     public <OO> BaseEventStream<OO> map(Function<O, OO> mapper) {
-        NewEventStream<O, OO> ret = NewEventStream.create(
+        GeneralEventStream<O, OO> ret = GeneralEventStream.create(
                 this.loop,
                 new EventFunction.Mapper<>(mapper),
                 "MAP"
@@ -37,7 +33,7 @@ public abstract class BaseEventStream<O> {
     }
 
     public <OO> BaseEventStream<OO> flatMap(Function<O, Iterable<OO>> mapper) {
-        NewEventStream<O, OO> ret = NewEventStream.createMulti(
+        GeneralEventStream<O, OO> ret = GeneralEventStream.createMulti(
                 this.loop,
                 new EventFunction.Mapper<>(mapper),
                 "FLATMAP"
@@ -47,7 +43,7 @@ public abstract class BaseEventStream<O> {
     }
 
     public BaseEventStream<O> filter(Predicate<O> predicate) {
-        NewEventStream<O, O> ret = NewEventStream.create(
+        GeneralEventStream<O, O> ret = GeneralEventStream.create(
                 this.loop,
                 new EventFunction.Filter<>(predicate),
                 "FILTER"
@@ -57,7 +53,7 @@ public abstract class BaseEventStream<O> {
     }
 
     public BaseEventStream<O> consume(Consumer<O> consumer) {
-        NewEventStream<O, O> ret = NewEventStream.create(
+        GeneralEventStream<O, O> ret = GeneralEventStream.create(
                 this.loop,
                 new EventFunction.Consumer<>(consumer),
                 "CONSUME"
@@ -67,7 +63,7 @@ public abstract class BaseEventStream<O> {
     }
 
     public BaseEventStream<O> consumeError(Consumer<Throwable> consumer) {
-        NewEventStream<O, O> ret = NewEventStream.create(
+        GeneralEventStream<O, O> ret = GeneralEventStream.create(
                 this.loop,
                 new ErrorFunction.ErrorConsumerBlackhole<>(consumer),
                 "CONSUME_ERROR"
@@ -77,7 +73,7 @@ public abstract class BaseEventStream<O> {
     }
 
     public BaseEventStream<O> mapError(Function<Throwable, O> mapping) {
-        NewEventStream<O, O> ret = NewEventStream.create(
+        GeneralEventStream<O, O> ret = GeneralEventStream.create(
                 this.loop,
                 new ErrorFunction.ErrorMapper<>(mapping),
                 "MAP_ERROR"
@@ -87,7 +83,7 @@ public abstract class BaseEventStream<O> {
     }
 
     public <K> BaseEventStream<O> distinct(Function<O, K> key) {
-        NewEventStream<O, O> ret = NewEventStream.create(
+        GeneralEventStream<O, O> ret = GeneralEventStream.create(
                 this.loop,
                 new DistinctFilter<>(key),
                 "DISTINCT"

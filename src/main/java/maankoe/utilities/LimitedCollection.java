@@ -1,4 +1,4 @@
-package maankoe.stream.reduce;
+package maankoe.utilities;
 
 import maankoe.utilities.Optional;
 
