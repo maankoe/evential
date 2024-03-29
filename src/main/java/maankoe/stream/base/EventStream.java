@@ -44,12 +44,8 @@ public class EventStream<O> extends GeneralEventStream<O, O> {
                 indexGenerator,
                 listenerBlockingStrategy,
                 eventBlockingStrategy,
-                new SingleEventSubmitStrategy<>(
-                        loop, new EventFunction.Identity<>(), indexGenerator, eventBlockingStrategy
-                ),
-                new SingleErrorSubmitStrategy<>(
-                        loop, new ErrorFunction.Identity<>(), indexGenerator, eventBlockingStrategy
-                ),
+                new SingleIdentitySubmitStrategy<>(indexGenerator),
+                new SingleErrorIdentitySubmitStrategy<>(indexGenerator),
                 new SimpleCloseStrategy(
                         indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
                 )

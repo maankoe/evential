@@ -53,9 +53,7 @@ public class GeneralEventStream<I, O>
                 new SingleEventSubmitStrategy<>(
                         loop, function, indexGenerator, eventBlockingStrategy
                 ),
-                new SingleErrorSubmitStrategy<>(
-                        loop, new ErrorFunction.Identity<>(), indexGenerator, eventBlockingStrategy
-                ),
+                new SingleErrorIdentitySubmitStrategy<>(indexGenerator),
                 new SimpleCloseStrategy(
                         indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
                 )
@@ -75,9 +73,7 @@ public class GeneralEventStream<I, O>
                 indexGenerator,
                 listenerBlockingStrategy,
                 eventBlockingStrategy,
-                new SingleEventSubmitStrategy<>(
-                        loop, new EventFunction.Identity<>(), indexGenerator, eventBlockingStrategy
-                ),
+                new SingleIdentitySubmitStrategy<>(indexGenerator),
                 new SingleErrorSubmitStrategy<>(
                         loop, errorFunction, indexGenerator, eventBlockingStrategy
                 ),
@@ -103,9 +99,7 @@ public class GeneralEventStream<I, O>
                 new MultipleEventSubmitStrategy<>(
                         loop, function, indexGenerator, eventBlockingStrategy
                 ),
-                new MultipleErrorSubmitStrategy<>(
-                        loop, new ErrorFunction.Identity<>(), indexGenerator, eventBlockingStrategy
-                ),
+                new SingleErrorIdentitySubmitStrategy<>(indexGenerator),
                 new SimpleCloseStrategy(
                         indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
                 )

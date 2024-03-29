@@ -36,6 +36,7 @@ public class MultipleEventSubmitStrategy<I, O> implements EventSubmitStrategy<I,
                     xi -> xi.forEach(listener::submit)
             )
         );
+        event.onError(listener::submitError);
         event.onComplete(ox -> listener.accept(submitIndex));
     }
 }
