@@ -67,7 +67,6 @@ public class TestEventStream {
         stream.close(n);
         LOGGER.info("{}", loop.numEvents());
         assertThat(results).containsExactlyInAnyOrderElementsOf(expected);
-//        assertThat(loop.hasEvents()).isFalse();
     }
 
     @Test

@@ -5,6 +5,8 @@ import maankoe.loop.Event;
 import maankoe.loop.EventLoop;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
+import maankoe.stream.submit.SingleErrorIdentitySubmitStrategy;
+import maankoe.stream.submit.SingleIdentitySubmitStrategy;
 import maankoe.utilities.LimitedCollection;
 import maankoe.stream.submit.ErrorSubmitStrategy;
 import maankoe.stream.submit.SingleErrorSubmitStrategy;
@@ -22,7 +24,6 @@ public class WindowedEventStream<O>
 
     private final static Logger LOGGER = LoggerFactory.getLogger(WindowedEventStream.class);
 
-    private final EventLoop loop;
     private final IndexGenerator indexGenerator;
     private final ListenerBlockingStrategy listenerBlockingStrategy;
     private final EventBlockingStrategy eventBlockingStrategy;
@@ -30,7 +31,7 @@ public class WindowedEventStream<O>
     private final ErrorSubmitStrategy<Iterable<O>> errorSubmitStrategy;
 
 
-    private AtomicReference<LimitedCollection<O>> current;
+    private final AtomicReference<LimitedCollection<O>> current;
     private final int windowSize;
 
     public WindowedEventStream(
@@ -42,7 +43,6 @@ public class WindowedEventStream<O>
             ErrorSubmitStrategy<Iterable<O>> errorSubmitStrategy
     ) {
         super(loop);
-        this.loop = loop;
         this.windowSize = windowSize;
         this.listenerBlockingStrategy = listenerBlockingStrategy;
         this.eventBlockingStrategy = eventBlockingStrategy;
@@ -65,9 +65,7 @@ public class WindowedEventStream<O>
                 listenerBlockingStrategy,
                 eventBlockingStrategy,
                 windowSize,
-                new SingleErrorSubmitStrategy<>(
-                        loop, new ErrorFunction.Identity<>(), indexGenerator, eventBlockingStrategy
-                )
+                new SingleErrorIdentitySubmitStrategy<>(indexGenerator)
         );
     }
 
@@ -86,9 +84,9 @@ public class WindowedEventStream<O>
         }
     }
 
-    private void submit(Collection<O> x) {
-        LOGGER.debug("{}: Submit {}", this.name, x);
-        Event<Iterable<O>> event = loop.submit(() -> x);
+    private void submit(Collection<O> items) {
+        LOGGER.debug("{}: Submit {}", this.name, items);
+        Event<Iterable<O>> event = loop.submit(() -> items);
         this.eventBlockingStrategy.submit(event);
         long submitIndex = this.indexGenerator.next();
         listener.expect(submitIndex);

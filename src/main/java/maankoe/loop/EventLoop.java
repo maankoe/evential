@@ -19,8 +19,12 @@ public class EventLoop {
     private boolean running = false;
 
     public EventLoop() {
+        this(5);
+    }
+
+    public EventLoop(int numThread) {
         this.events = new ConcurrentLinkedQueue<>();
-        this.executor = Executors.newFixedThreadPool(5);
+        this.executor = Executors.newFixedThreadPool(numThread);
     }
 
     public void run() {
@@ -47,6 +51,9 @@ public class EventLoop {
         this.events.remove(event);
     }
 
+    public void start() {
+        Executors.newSingleThreadExecutor().submit(this::run);
+    }
     public void stop() {
         this.running = false;
     }

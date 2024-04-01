@@ -4,12 +4,12 @@ import maankoe.function.DistinctFilter;
 import maankoe.function.ErrorFunction;
 import maankoe.function.EventFunction;
 import maankoe.loop.EventLoop;
+import maankoe.stream.reduce.Accumulation;
+import maankoe.stream.reduce.Reduction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 
 public abstract class BaseEventStream<O> {
@@ -92,19 +92,27 @@ public abstract class BaseEventStream<O> {
         return ret;
     }
 
-//    public <I> Reduction<I, O> reduce(BiFunction<I, O, O> reduction, O identity) {
-//        Reduction<I, O> ret = new Reduction<>(
-//                this.loop, reduction, identity
-//        );
-//        this.listener = ret;
-//        return ret;
-//    }
-
     public BaseEventStream<Iterable<O>> window(int windowSize) {
         WindowedEventStream<O> ret = WindowedEventStream.create(
                 this.loop,
                 windowSize,
                 "WINDOWED"
+        );
+        this.listener = ret;
+        return ret;
+    }
+
+    public <OO> Accumulation<O, OO> reduce(BiFunction<O, OO, OO> reduction, Supplier<OO> identity) {
+        Accumulation<O, OO> ret = Accumulation.create(
+                this.loop, reduction, identity, "REDUCE"
+        );
+        this.listener = ret;
+        return ret;
+    }
+
+    public Reduction<O> reduce(BinaryOperator<O> reduction) {
+        Reduction<O> ret = Reduction.create(
+                this.loop, reduction, "REDUCE"
         );
         this.listener = ret;
         return ret;

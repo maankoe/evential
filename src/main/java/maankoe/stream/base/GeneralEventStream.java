@@ -7,10 +7,14 @@ import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
 import maankoe.stream.submit.*;
 import maankoe.utilities.IndexGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GeneralEventStream<I, O>
         extends BaseEventStream<O>
         implements EventStreamListener<I>  {
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(GeneralEventStream.class);
 
     private final IndexGenerator indexGenerator;
     private final ListenerBlockingStrategy listenerBlockingStrategy;
@@ -18,6 +22,7 @@ public class GeneralEventStream<I, O>
     private final EventSubmitStrategy<I, O> eventSubmitStrategy;
     private final ErrorSubmitStrategy<O> errorSubmitStrategy;
     private final CloseStrategy closeStrategy;
+    private final String name;
 
     public GeneralEventStream(
             EventLoop loop,
@@ -26,7 +31,8 @@ public class GeneralEventStream<I, O>
             EventBlockingStrategy eventBlockingStrategy,
             EventSubmitStrategy<I, O> eventSubmitStrategy,
             ErrorSubmitStrategy<O> errorSubmitStrategy,
-            CloseStrategy closeStrategy
+            CloseStrategy closeStrategy,
+            String name
     ) {
         super(loop);
         this.indexGenerator = indexGenerator;
@@ -35,6 +41,7 @@ public class GeneralEventStream<I, O>
         this.eventSubmitStrategy = eventSubmitStrategy;
         this.errorSubmitStrategy = errorSubmitStrategy;
         this.closeStrategy = closeStrategy;
+        this.name = name;
     }
 
     public static <I, O> GeneralEventStream<I, O> create(
@@ -56,7 +63,8 @@ public class GeneralEventStream<I, O>
                 new SingleErrorIdentitySubmitStrategy<>(indexGenerator),
                 new SimpleCloseStrategy(
                         indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
-                )
+                ),
+                name
         );
     }
 
@@ -79,7 +87,8 @@ public class GeneralEventStream<I, O>
                 ),
                 new SimpleCloseStrategy(
                         indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
-                )
+                ),
+                name
         );
     }
 
@@ -102,32 +111,38 @@ public class GeneralEventStream<I, O>
                 new SingleErrorIdentitySubmitStrategy<>(indexGenerator),
                 new SimpleCloseStrategy(
                         indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
-                )
+                ),
+                name
         );
     }
 
     @Override
     public void expect(long index) {
+        LOGGER.info("{} Expect: {}", this.name, index);
         this.listenerBlockingStrategy.expect(index);
     }
 
     @Override
     public void submit(I item) {
+        LOGGER.info("{} Submit: {}", this.name, item);
         this.eventSubmitStrategy.submit(item, listener);
     }
 
     @Override
     public void submitError(Throwable error) {
+        LOGGER.info("{} Error: {}", this.name, error.getMessage());
         this.errorSubmitStrategy.submit(error, this.listener);
     }
 
     @Override
     public void accept(long index) {
+        LOGGER.info("{} Accept: {}", this.name, index);
         this.listenerBlockingStrategy.accept(index);
     }
 
     @Override
     public void close(long index) {
+        LOGGER.info("{} Close: {}", this.name, index);
         this.closeStrategy.close(index, this.listener);
     }
 }

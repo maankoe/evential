@@ -1,8 +1,6 @@
 package maankoe.stream.base;
 
 
-import maankoe.function.ErrorFunction;
-import maankoe.function.EventFunction;
 import maankoe.loop.EventLoop;
 import maankoe.stream.blocking.EventBlockingStrategy;
 import maankoe.stream.blocking.ListenerBlockingStrategy;
@@ -18,7 +16,8 @@ public class EventStream<O> extends GeneralEventStream<O, O> {
             EventBlockingStrategy eventBlockingStrategy,
             EventSubmitStrategy<O, O> eventSubmitStrategy,
             ErrorSubmitStrategy<O> errorSubmitStrategy,
-            CloseStrategy closeStrategy
+            CloseStrategy closeStrategy,
+            String name
     ) {
         super(
                 loop,
@@ -27,7 +26,8 @@ public class EventStream<O> extends GeneralEventStream<O, O> {
                 eventBlockingStrategy,
                 eventSubmitStrategy,
                 errorSubmitStrategy,
-                closeStrategy
+                closeStrategy,
+                name
         );
     }
 
@@ -48,7 +48,8 @@ public class EventStream<O> extends GeneralEventStream<O, O> {
                 new SingleErrorIdentitySubmitStrategy<>(indexGenerator),
                 new SimpleCloseStrategy(
                         indexGenerator, listenerBlockingStrategy, eventBlockingStrategy
-                )
+                ),
+                name
         );
     }
 }

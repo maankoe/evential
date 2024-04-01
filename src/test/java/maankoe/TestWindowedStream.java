@@ -47,6 +47,32 @@ public class TestWindowedStream {
     }
 
     @Test
+    public void testWindowNoSleepSmall() {
+        EventLoop loop = new EventLoop();
+        Executors.newSingleThreadExecutor().submit(loop::run);
+        EventStream<Integer> stream = EventStream.create(loop);
+        Collection<Iterable<Integer>> results = new ConcurrentLinkedQueue<>();
+        int windowSize = 2;
+        BaseEventStream<Iterable<Integer>> outStream = stream
+                .window(windowSize)
+                .consume(results::add);
+        List<Integer> expected = new ArrayList<>();
+        int n = 9999;
+        for (int i=0;i<=n;i++) {
+            expected.add(i);
+            stream.expect(i);
+            stream.submit(i);
+            stream.accept(i);
+        }
+        stream.close(n);
+        LOGGER.info("{}", results);
+        assertThat(results.stream().flatMap(Streams::stream).collect(Collectors.toList()))
+                .containsExactlyInAnyOrderElementsOf(expected);
+        assertThat(results).hasSize((int) Math.ceil(n / (double) windowSize));
+        assertThat(results).allMatch(x -> Streams.stream(x).toList().size() == windowSize);
+    }
+
+    @Test
     public void testWindowOddSizes() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
