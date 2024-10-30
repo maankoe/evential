@@ -36,6 +36,14 @@ public class LimitedCollection<T> {
         } catch (InterruptedException | ExecutionException e) {
             // do nothing
         }
+        return this.getIfNotEmitted();
+    }
+
+    public Optional<Collection<T>> getIncomplete() {
+        return this.getIfNotEmitted();
+    }
+
+    private Optional<Collection<T>> getIfNotEmitted() {
         if (emitted.compareAndSet(false, true)) {
             return Optional.of(this.base);
         } else {

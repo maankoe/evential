@@ -71,6 +71,7 @@ public class WindowedEventStream<O>
 
     @Override
     public void expect(long index) {
+        LOGGER.debug("{}: Expect {}", this.name, index);
         this.listenerBlockingStrategy.expect(index);
     }
 
@@ -102,6 +103,7 @@ public class WindowedEventStream<O>
 
     @Override
     public void accept(long index) {
+        LOGGER.debug("{}: Accept {}", this.name, index);
         this.listenerBlockingStrategy.accept(index);
     }
 
@@ -110,7 +112,7 @@ public class WindowedEventStream<O>
         LOGGER.info("{}: Closing stream at index {}", this.name, index);
         this.listenerBlockingStrategy.close(index);
         this.listenerBlockingStrategy.block();
-        this.current.get().get()
+        this.current.get().getIncomplete()
                 .filter(x -> !x.isEmpty())
                 .ifPresent(this::submit);
         this.eventBlockingStrategy.block();

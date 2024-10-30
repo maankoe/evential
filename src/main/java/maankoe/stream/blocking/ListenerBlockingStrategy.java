@@ -73,5 +73,7 @@ public class ListenerBlockingStrategy {
                 //do nothing
             }
         }
+        LOGGER.info("{}: RELEASE", this.name);
+
     }
 }
