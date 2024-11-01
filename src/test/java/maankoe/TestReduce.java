@@ -29,26 +29,6 @@ public class TestReduce {
         stream.close(n);
         assertThat(result.get()).isEqualTo(expected);
     }
-
-    @Test
-    public void testReduce() {
-        EventLoop loop = new EventLoop();
-        Executors.newSingleThreadExecutor().submit(loop::run);
-        EventStream<Integer> stream = EventStream.create(loop);
-        Reduction<Integer> result = stream
-                .reduce(Integer::sum);
-        int expected = 0;
-        int n = 5000;
-        for (int i=0;i<=n;i++) {
-            expected += i;
-            stream.expect(i);
-            stream.submit(i);
-            stream.accept(i);
-        }
-        stream.close(n);
-        assertThat(result.get()).isEqualTo(expected);
-    }
-
     @Test
     public void testReduceEvenBatch() {
         EventLoop loop = new EventLoop();
@@ -57,33 +37,33 @@ public class TestReduce {
         Reduction<Integer> result = stream
                 .reduce(Integer::sum);
         int expected = 0;
-        int n = 98;
-        for (int i=0;i<=n;i++) {
+        int n = 1000;
+        for (int i=0;i<n;i++) {
             expected += i;
             stream.expect(i);
             stream.submit(i);
             stream.accept(i);
         }
-        stream.close(n);
+        stream.close(n-1);
         assertThat(result.get()).isEqualTo(expected);
     }
 
     @Test
-    public void testReduceEvenBatch2() {
+    public void testReduceOddBatch() {
         EventLoop loop = new EventLoop();
         Executors.newSingleThreadExecutor().submit(loop::run);
         EventStream<Integer> stream = EventStream.create(loop);
         Reduction<Integer> result = stream
                 .reduce(Integer::sum);
         int expected = 0;
-        int n = 99;
-        for (int i=0;i<=n;i++) {
+        int n = 999;
+        for (int i=0;i<n;i++) {
             expected += i;
             stream.expect(i);
             stream.submit(i);
             stream.accept(i);
         }
-        stream.close(n);
+        stream.close(n-1);
         assertThat(result.get()).isEqualTo(expected);
     }
 }

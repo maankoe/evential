@@ -30,19 +30,21 @@ public class ListenerBlockingStrategy {
     }
 
     public void expect(long index) {
-        if (index >= this.closeIndex.get()) {
-            LOGGER.error("Cannot expect {} on stream closed at {}", index, this.closeIndex);
+        if (index > this.closeIndex.get()) {
+            LOGGER.error("{} Cannot expect {} on stream closed at {}", this.name, index, this.closeIndex);
             throw new IllegalStateException(String.format(
                     "Stream is closed and cannot expect more input, closed at %d, received %d",
                     this.closeIndex.get(),
                     index
             ));
         }
+        LOGGER.info("{}: expect {}", this.name, index);
         this.ticker.getAndIncrement();
         this.maxExpecting.getAndUpdate(x -> max(x, index));
     }
 
     public void accept(long index) {
+        LOGGER.info("{}: accept {}", this.name, index);
         this.ticker.getAndDecrement();
         if (this.isBlocked.get() && this.ticker.get() == 0) {
             LOGGER.info(
@@ -62,7 +64,7 @@ public class ListenerBlockingStrategy {
         this.isBlocked.compareAndSet(false, true);
         this.isSatisfied = new CompletableFuture<>();
         while (this.ticker.get() != 0 || this.maxExpecting.get() < this.closeIndex.get()) {
-            LOGGER.info(
+            LOGGER.debug(
                     "{}: EXPECTING {}, inputs, {}/{}",
                     this.name,  this.ticker.get(),
                     this.maxExpecting, this.closeIndex

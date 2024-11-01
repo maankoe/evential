@@ -110,9 +110,9 @@ public abstract class BaseEventStream<O> {
         return ret;
     }
 
-    public Reduction<O> reduce(BinaryOperator<O> reduction) {
+    public Reduction<O> reduce(BinaryOperator<O> reduce) {
         Reduction<O> ret = Reduction.create(
-                this.loop, reduction, "REDUCE"
+                this.loop, reduce, "REDUCE"
         );
         this.listener = ret;
         return ret;

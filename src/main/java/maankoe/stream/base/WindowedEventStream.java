@@ -103,7 +103,7 @@ public class WindowedEventStream<O>
 
     @Override
     public void accept(long index) {
-        LOGGER.debug("{}: Accept {}", this.name, index);
+        LOGGER.info("{}: Accept {}", this.name, index);
         this.listenerBlockingStrategy.accept(index);
     }
 
@@ -112,10 +112,15 @@ public class WindowedEventStream<O>
         LOGGER.info("{}: Closing stream at index {}", this.name, index);
         this.listenerBlockingStrategy.close(index);
         this.listenerBlockingStrategy.block();
+        LOGGER.info("{}: Listener released {}", this.name, index);
         this.current.get().getIncomplete()
                 .filter(x -> !x.isEmpty())
-                .ifPresent(this::submit);
+                .ifPresent(x -> {
+                    LOGGER.info("{} LastSubmit: {}", this.name, x);
+                    this.submit(x);
+                });
         this.eventBlockingStrategy.block();
         listener.close(this.indexGenerator.current());
+        LOGGER.info("{}: done {}", this.name, index);
     }
 }

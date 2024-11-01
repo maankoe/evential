@@ -93,7 +93,6 @@ public class Accumulation<I, O>
                 }
         );
         this.eventBlockingStrategy.submit(event);
-
         long submitIndex = this.indexGenerator.next();
         this.listener.expect(submitIndex);
         event.onSuccess(x -> listener.submit(item));
@@ -114,7 +113,6 @@ public class Accumulation<I, O>
     @Override
     public void close(long index) {
         this.closeStrategy.close(index, this.listener);
-
     }
 
     public O get() {

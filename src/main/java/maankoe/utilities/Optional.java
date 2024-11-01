@@ -25,14 +25,15 @@ public class Optional<T> {
         return new Optional<>(value, Objects.isNull(value));
     }
 
-    public void ifPresent(Consumer<T> action) {
+    public Optional<T> ifPresent(Consumer<T> action) {
         if (this.isPresent) {
             action.accept(value);
         }
+        return this;
     }
 
     public Optional<T> filter(Predicate<T> predicate) {
-        if (predicate.test(value)) {
+        if (this.isPresent && predicate.test(value)) {
             return this;
         } else {
             return Optional.empty();

@@ -40,7 +40,9 @@ public class LimitedCollection<T> {
     }
 
     public Optional<Collection<T>> getIncomplete() {
-        return this.getIfNotEmitted();
+        Optional<Collection<T>> collection = this.getIfNotEmitted();
+        this.collected.complete(OBJECT);
+        return collection;
     }
 
     private Optional<Collection<T>> getIfNotEmitted() {
@@ -55,6 +57,9 @@ public class LimitedCollection<T> {
         if (this.size.getAndIncrement() < limit) {
             LOGGER.info("ADD: {}, {} + {}", this.size.get(), this, item);
             this.base.add(item);
+            if (this.emitted.get()) {
+                throw new IllegalStateException("Limited collection as added to after emission");
+            }
             if (this.base.size() == limit) {
                 this.collected.complete(OBJECT);
             }
