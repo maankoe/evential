@@ -8,6 +8,7 @@ public class Optional<T> {
     private final T value;
     private final boolean isPresent;
 
+    /** This Optional class isPresent independently of whether the value is null or not */
     private Optional(T value, boolean isPresent) {
         this.value = value;
         this.isPresent = isPresent;

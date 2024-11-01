@@ -34,6 +34,7 @@ public class Reduction<I>
     private final String name;
     private final CompletableFuture<Long> reduceCloseIndex = new CompletableFuture<>();
     private I result;
+    private AtomicReference<Throwable> error = new AtomicReference<>();
 
     public Reduction(
             EventLoop loop,
@@ -59,17 +60,26 @@ public class Reduction<I>
 
     public void reduce(Iterable<I> items) {
         List<I> lst = Streams.stream(items).toList();
-        I r = lst.stream().reduce(this.function).get();
         long index = indexGenerator.next();
-        LOGGER.info("{}: ReduceCalc {}/{} size={} {} {}", this.name, index, this.reduceCloseIndex.getNow(-1L), lst.size(), lst, r);
-        if (index <= this.reduceCloseIndex.getNow(Long.MAX_VALUE)) {
-            LOGGER.info("{}: ReduceSubmit {} : {}", this.name, r, index);
-            this.reduceWindow.expect(index);
-            this.reduceWindow.submit(r);
-            this.reduceWindow.accept(index);
-        } else {
-            LOGGER.info("{}: ReduceDone {}={} : {}", this.name, items, r, index);
-            this.result = lst.stream().reduce(this.function).get();
+        try {
+            I result = lst.stream().reduce(this.function).get();
+            LOGGER.info("{}: ReduceCalc {}/{} size={} {} {}",
+                    this.name, index, this.reduceCloseIndex.getNow(-1L),
+                    lst.size(), lst, result);
+            if (index <= this.reduceCloseIndex.getNow(Long.MAX_VALUE)) {
+                this.reduceWindow.expect(index);
+                this.reduceWindow.submit(result);
+                this.reduceWindow.accept(index);
+            } else {
+                LOGGER.info("{}: ReduceDone {} : {}", this.name, result, index);
+                this.result = result;
+                this.listener.expect(0);
+                this.listener.submit(result);
+                this.listener.accept(0);
+            }
+        } catch (Throwable e) {
+            this.error.compareAndSet(null, e);
+            this.listener.submitError(e);
         }
     }
 
@@ -104,6 +114,10 @@ public class Reduction<I>
         this.submitWindow.close(index);
         this.reduceWindow.close(reduceCloseIndex);
         LOGGER.info("{} done {}", this.name, this.indexGenerator.current());
+    }
+
+    public Optional<Throwable> getError() {
+        return Optional.ofNullable(this.error.get());
     }
 
     public I get() {
